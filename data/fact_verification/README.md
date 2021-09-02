@@ -1,0 +1,2 @@
+fever
+fever symmetric
