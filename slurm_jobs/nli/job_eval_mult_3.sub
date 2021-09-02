@@ -1,0 +1,57 @@
+#!/bin/bash -l
+#SBATCH --error=output/task.out.%j  # STDOUT output is written in slurm.out.JOBID
+#SBATCH --output=output/task.out.%j # STDOUT error is written in slurm.err.JOBID
+#SBATCH --job-name=eval       # Job name
+#SBATCH --mem=16GB                  # Memory request for this job
+#SBATCH --nodes=1                   # The number of nodes
+#SBATCH --partition=gpu-cluster
+#SBATCH --account=scads
+#SBATCH --time=2:0:0                # Runing time 2 hours
+#SBATCH --gpus=1                    # A number of GPUs  
+
+# module load Anaconda3
+ module load CUDA/10.1
+ module load cuDNN/7
+ module load HDF5
+
+MODEL_DIR="outputs_bert_base_amp"
+# mnli + mnli/snli hard + kaushik 
+echo $MODEL_DIR
+cd ~/CI4RRL_project
+source ~/CI_env/bin/activate
+MNLI_PARAMS=($MODEL_DIR/model.tar.gz  
+spurious_corr/MNLI/data/multinli_1.0_dev_mismatched.jsonl:spurious_corr/MNLI/data/snli_1.0_test_hard.jsonl:spurious_corr/MNLI/data/dev_mismatched_hard.jsonl:spurious_corr/MNLI/data/test_kaushik_RP.jsonl:spurious_corr/MNLI/data/test_kaushik_RH.jsonl:spurious_corr/MNLI/data/test_kaushik_combined.jsonl
+--output-file=$MODEL_DIR/result.txt:$MODEL_DIR/snli_hard_result.txt:$MODEL_DIR/mnli_hard_dev_mm_result.txt:$MODEL_DIR/kaushik_rp_result.txt:$MODEL_DIR/kaushik_rh_result.txt:$MODEL_DIR/kaushik_combined_result.txt
+--cuda-device=0
+--include-package=my_package)
+allennlp evaluate_mult ${MNLI_PARAMS[@]} # standard eval
+echo $MODEL_DIR
+
+# hans
+allennlp predict $MODEL_DIR/model.tar.gz spurious_corr/MNLI/data/heuristics_evaluation_set.jsonl --output-file $MODEL_DIR/hans_result.jsonl --batch-size 16 --cuda-device 0 --predictor textual_entailment --include-package my_package
+python hans_parser.py -i $MODEL_DIR/hans_result.jsonl -o $MODEL_DIR/hans.out
+cd spurious_corr/MNLI/hans/
+python evaluate_heur_output.py /ist/users/canu/CI4RRL_project/$MODEL_DIR/hans.out > /ist/users/canu/CI4RRL_project/$MODEL_DIR/hans_results.txt
+
+
+
+echo $MODEL_DIR
+
+# naik stress test
+echo "Stress Test (Naik et al., 2018)" 
+cd ~/CI4RRL_project
+
+echo $MODEL_DIR
+
+echo "naik"
+NAIK_PARAMS=($MODEL_DIR/model.tar.gz  
+spurious_corr/MNLI/data/naik_stress_test/stress_tests/Antonym/multinli_0.9_antonym_mismatched.jsonl:spurious_corr/MNLI/data/naik_stress_test/stress_tests/Numerical_Reasoning/multinli_0.9_quant_hard.jsonl:spurious_corr/MNLI/data/naik_stress_test/stress_tests/Word_Overlap/multinli_0.9_taut2_mismatched.jsonl:spurious_corr/MNLI/data/naik_stress_test/stress_tests/Negation/multinli_0.9_negation_mismatched.jsonl:spurious_corr/MNLI/data/naik_stress_test/stress_tests/Length_Mismatch/multinli_0.9_length_mismatch_mismatched.jsonl:spurious_corr/MNLI/data/naik_stress_test/stress_tests/Spelling_Error/multinli_0.9_dev_gram_all_mismatched.jsonl
+--output-file=$MODEL_DIR/antonym_result.txt:$MODEL_DIR/numerical_reasoning_result.txt:$MODEL_DIR/word_overlap_result.txt:$MODEL_DIR/negation_result.txt:$MODEL_DIR/length_mismatch_result.txt:$MODEL_DIR/spelling_result.txt
+--cuda-device=0
+--include-package=my_package)
+
+allennlp evaluate_mult ${NAIK_PARAMS[@]}
+
+
+
+
