@@ -49,7 +49,7 @@ class CounterfactualTextualEntailmentPredictor(Predictor):
     def predict_batch_json(self, inputs: List[JsonDict], cf_weight: float) -> List[JsonDict]:
         instances = self._batch_json_to_instances(inputs)
         return self.predict_batch_instance(instances,cf_weight)
-    \
+    
     @overrides        
     def predict_json(self, inputs: JsonDict, cf_weight: float) -> JsonDict:
         instance = self._json_to_instance(inputs)
@@ -69,7 +69,7 @@ class CounterfactualTextualEntailmentPredictor(Predictor):
     @overrides
     def predict_instance(self, instance: Instance, cf_weight: float) -> JsonDict:
         self._dataset_reader.apply_token_indexers(instance)
-        breakpoint()
+        # breakpoint()
         cf_instance = deepcopy(instance)
         cf_instance.fields['tokens'] = cf_instance.fields.pop('cf_tokens')
         instance.fields.pop('cf_tokens')

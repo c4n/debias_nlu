@@ -20,8 +20,8 @@ from allennlp.models.archival import load_archive
 from allennlp.predictors.predictor import Predictor, JsonDict
 from allennlp.data import Instance
 
-from my_package.counterfactual_reader import  CounterfactualSnliReader
-from my_package.counterfactual_reader_mask_ol import CounterfactualSnliReaderMaskOL
+from my_package.data.dataset_readers.counterfactual_reader import  CounterfactualSnliReader
+from my_package.data.dataset_readers.counterfactual_reader_mask_ol import CounterfactualSnliReaderMaskOL
 
 from allennlp.data.token_indexers import (
     SingleIdTokenIndexer,
@@ -135,6 +135,10 @@ class Predict(Subcommand):
             "--cf_weight", type=float, default=0.5, help="weight for counterfactual component"
         )
 
+        subparser.add_argument(
+            "--cf_type", type=str, default="mask_all", help="weight for counterfactual component"
+        )
+
         subparser.set_defaults(func=_cfpredict)
 
         return subparser
@@ -150,14 +154,18 @@ def _get_cf_predictor(args: argparse.Namespace) -> Predictor:
     )
     # Get datareader
     config = archive.config
-    model_config  = config.get('model')
+    model_config = config.get('model')
     model_name = model_config['text_field_embedder']['token_embedders']['tokens']['model_name']
     max_length = model_config['text_field_embedder']['token_embedders']['tokens']['max_length']
 
     pretrained_transformer_tokenizer = PretrainedTransformerTokenizer(model_name=model_name,add_special_tokens = False)
     token_indexer  = PretrainedTransformerIndexer(model_name=model_name,max_length=max_length )
-    dataset_reader = CounterfactualSnliReader(tokenizer=pretrained_transformer_tokenizer,token_indexers={"tokens":token_indexer})
-    # dataset_reader = CounterfactualSnliReaderMaskOL(tokenizer=pretrained_transformer_tokenizer,token_indexers={"tokens":token_indexer})
+
+    print(args.cf_type)
+    if args.cf_type == "mask_all":
+        dataset_reader = CounterfactualSnliReader(tokenizer=pretrained_transformer_tokenizer,token_indexers={"tokens":token_indexer})
+    elif args.cf_type == "mask_overlap":
+        dataset_reader = CounterfactualSnliReaderMaskOL(tokenizer=pretrained_transformer_tokenizer,token_indexers={"tokens":token_indexer})
 
     predictor_args = args.predictor_args.strip()
     if len(predictor_args) <= 0:

@@ -39,8 +39,8 @@ from allennlp.models.model import Model
 from allennlp.nn import util as nn_util
 
 
-from my_package.counterfactual_reader import  CounterfactualSnliReader
-from my_package.counterfactual_reader_mask_ol import CounterfactualSnliReaderMaskOL
+from my_package.data.dataset_readers.counterfactual_reader import  CounterfactualSnliReader
+from my_package.data.dataset_readers.counterfactual_reader_mask_ol import CounterfactualSnliReaderMaskOL
 
 
 from allennlp.data.token_indexers import (
@@ -138,7 +138,7 @@ def one_cf_evaluate(
 
             if cf == "normal": 
                 output_dict = model(**batch)
-            elif cf == "mask_all" or cf == "mask_overlap":
+            elif cf[:4] == "mask":
                 output_dict = model(**batch_cf)
 
             # probs = torch.nn.functional.softmax(output_dict['logits'], dim=-1)
@@ -331,7 +331,7 @@ def evaluate_from_args(args: argparse.Namespace) -> Dict[str, Any]:
     token_indexer  = PretrainedTransformerIndexer(model_name=model_name,max_length=max_length )
     if args.cf == 'mask_all':
         dataset_reader = CounterfactualSnliReader(tokenizer=pretrained_transformer_tokenizer,token_indexers={"tokens":token_indexer})
-    else: #mask_overlap
+    elif args.cf == 'mask_overlap': #mask_overlap
         dataset_reader = CounterfactualSnliReaderMaskOL(tokenizer=pretrained_transformer_tokenizer,token_indexers={"tokens":token_indexer})        
 
     # dataset_reader = archive.validation_dataset_reader

@@ -27,7 +27,7 @@ from allennlp.common import util
 from allennlp.common.registrable import Registrable
 
 #add field
-from my_package.my_fields import FloatField
+from my_package.data.fields.float_fields import FloatField
 
 logger = logging.getLogger(__name__)
 

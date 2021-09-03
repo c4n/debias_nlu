@@ -39,7 +39,7 @@ from allennlp.models.model import Model
 from allennlp.nn import util as nn_util
 
 
-from my_package.counterfactual_reader import  CounterfactualSnliReader
+from my_package.data.dataset_readers.counterfactual_reader import  CounterfactualSnliReader
 
 from allennlp.data.token_indexers import (
     SingleIdTokenIndexer,

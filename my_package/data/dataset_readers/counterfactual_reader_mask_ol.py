@@ -27,7 +27,7 @@ from allennlp.common import util
 from allennlp.common.registrable import Registrable
 
 #add field
-from my_package.my_fields import FloatField
+from my_package.data.fields.float_fields import FloatField
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +124,6 @@ class CounterfactualSnliReaderMaskOL(DatasetReader):
         mask_token = self._tokenizer.tokenizer.mask_token
         mask_token = self._tokenizer.tokenize(mask_token)
         premise = self._tokenizer.tokenize(premise)
-        print(premise)
         hypothesis = self._tokenizer.tokenize(hypothesis)
         temp_premise = []
         temp_hypothesis = []
@@ -133,14 +132,14 @@ class CounterfactualSnliReaderMaskOL(DatasetReader):
         for p in premise:
             if p.text in hypothesis_text:
                 temp_premise.append(mask_token[0])
-                print(p)
+                # print(p)
             else:
                 temp_premise.append(p)
 
         for h in hypothesis:
             if h.text in premise_text:
                 temp_hypothesis.append(mask_token[0])
-                print(h)
+                # print(h)
             else:
                 temp_hypothesis.append(h)       
     
