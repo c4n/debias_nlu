@@ -17,6 +17,8 @@ from allennlp.common import logging as common_logging
 from allennlp.common.util import prepare_environment
 from allennlp.models.archival import load_archive
 from allennlp.training.util import evaluate
+from allennlp.data.dataset_readers import DatasetReader
+
 
 import datetime
 import os
@@ -329,11 +331,11 @@ def evaluate_from_args(args: argparse.Namespace) -> Dict[str, Any]:
 
     pretrained_transformer_tokenizer = PretrainedTransformerTokenizer(model_name=model_name,add_special_tokens = False)
     token_indexer  = PretrainedTransformerIndexer(model_name=model_name,max_length=max_length )
-    if args.cf == 'mask_all':
-        dataset_reader = CounterfactualSnliReader(tokenizer=pretrained_transformer_tokenizer,token_indexers={"tokens":token_indexer})
-    elif args.cf == 'mask_overlap': #mask_overlap
-        dataset_reader = CounterfactualSnliReaderMaskOL(tokenizer=pretrained_transformer_tokenizer,token_indexers={"tokens":token_indexer})        
-
+    # if args.cf == 'mask_all':
+    #     dataset_reader = CounterfactualSnliReader(tokenizer=pretrained_transformer_tokenizer,token_indexers={"tokens":token_indexer})
+    # elif args.cf == 'mask_overlap': #mask_overlap
+    #     dataset_reader = CounterfactualSnliReaderMaskOL(tokenizer=pretrained_transformer_tokenizer,token_indexers={"tokens":token_indexer})        
+    dataset_reader = DatasetReader.from_params(args.cf_type,tokenizer=pretrained_transformer_tokenizer,token_indexers={"tokens":token_indexer})
     # dataset_reader = archive.validation_dataset_reader
 
     # split files

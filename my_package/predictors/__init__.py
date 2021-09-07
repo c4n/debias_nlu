@@ -1,0 +1,1 @@
+from my_package.predictors  import cf_predictor
