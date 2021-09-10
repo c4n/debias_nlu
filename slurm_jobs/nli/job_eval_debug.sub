@@ -19,15 +19,20 @@ MODEL_DIR="/ist/ist-share/scads/can/outputs_ps_bert_base_clark_v2"
 echo $MODEL_DIR
 cd ~/debias_nlu
 source ~/CI_env/bin/activate
+# :data/nli/snli_1.0_test_hard.jsonl:data/nli/dev_mismatched_hard.jsonl:data/nli/test_kaushik_RP.jsonl:data/nli/test_kaushik_RH.jsonl:data/nli/test_kaushik_combined.jsonl
+# --output-file=$MODEL_DIR/cf_result.txt:$MODEL_DIR/cf_snli_hard_result.txt:$MODEL_DIR/cf_mnli_hard_dev_mm_result.txt:$MODEL_DIR/cf_kaushik_rp_result.txt:$MODEL_DIR/cf_kaushik_rh_result.txt:$MODEL_DIR/cf_kaushik_combined_result.txt
 # MNLI_PARAMS=($MODEL_DIR/model.tar.gz  
-# spurious_corr/MNLI/data/multinli_1.0_dev_mismatched.jsonl:spurious_corr/MNLI/data/snli_1.0_test_hard.jsonl:spurious_corr/MNLI/data/dev_mismatched_hard.jsonl:spurious_corr/MNLI/data/test_kaushik_RP.jsonl:spurious_corr/MNLI/data/test_kaushik_RH.jsonl:spurious_corr/MNLI/data/test_kaushik_combined.jsonl
-# --output-file=$MODEL_DIR/tmp_result.txt:$MODEL_DIR/tmp_snli_hard_result.txt:$MODEL_DIR/tmp_mnli_hard_dev_mm_result.txt:$MODEL_DIR/tmp_kaushik_rp_result.txt:$MODEL_DIR/tmp_kaushik_rh_result.txt:$MODEL_DIR/tmp_kaushik_combined_result.txt
+# data/nli/multinli_1.0_dev_mismatched_overlap.jsonl
+# --output-file=$MODEL_DIR/normal_result.txt
+# --cf_type counterfactual_snli
+# --cf_weight  0
+# --cf_method mult
 # --cuda-device=0
 # --include-package=my_package)
-# allennlp evaluate_mult ${MNLI_PARAMS[@]} # standard eval
+# allennlp evaluate_mult_cf ${MNLI_PARAMS[@]} # standard eval
 # echo $MODEL_DIR 
 # ON DEV SET!!!
-# allennlp evaluate_one_cf $MODEL_DIR/model.tar.gz data/NLI/multinli_1.0_dev_matched_overlap.jsonl  --predictions-output-file $MODEL_DIR/main_result_cf_mask_v2.jsonl --cf "mask_overlap" --cuda-device 0 --include-package my_package # standard eval
+# allennlp evaluate_one_cf $MODEL_DIR/model.tar.gz data/nli/multinli_1.0_dev_mismatched_overlap.jsonl  --predictions-output-file $MODEL_DIR/main_result_overlap.jsonl --cf_type normal --cuda-device 0 --include-package my_package # standard eval
 # echo $MODEL_DIR
 
 # eval counterfactual
@@ -35,8 +40,9 @@ source ~/CI_env/bin/activate
 # hans
 
 
-allennlp cf_predict $MODEL_DIR/model.tar.gz data/heuristics_evaluation_set.jsonl --output-file $MODEL_DIR/cf_hans_result_mask_v2.jsonl --batch-size 64 --cuda-device 0 --cf_type counterfactual_snli_hypo --cf_weight  0.8386772199020657 --predictor cf_textual_entailment --include-package my_package
+# allennlp cf_predict $MODEL_DIR/model.tar.gz data/nli/heuristics_evaluation_set_sample_weight.jsonl --output-file $MODEL_DIR/cf_hans_result_mask_v2.jsonl --batch-size 64 --cuda-device 0 --cf_type counterfactual_snli --cf_weight  0.3745401188473625 --predictor cf_textual_entailment_reweighted --include-package my_package
+# cd utils/
+# python hans_parser.py -i $MODEL_DIR/cf_hans_result_mask_v2.jsonl -o $MODEL_DIR/cf_hans_mask_v2.out
+# python evaluate_heur_output.py $MODEL_DIR/cf_hans_mask_v2.out > $MODEL_DIR/cf_hans_results_mask_v2x.txt
 cd utils/
-python hans_parser.py -i $MODEL_DIR/cf_hans_result_mask_v2.jsonl -o $MODEL_DIR/cf_hans_mask_v2.out
-python evaluate_heur_output.py $MODEL_DIR/cf_hans_mask_v2.out > $MODEL_DIR/cf_hans_results_mask_v2_8386772199020657.txt
-
+python evaluate_heur_output.py $MODEL_DIR/cf_hans_mask_v2.out
