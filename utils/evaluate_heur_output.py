@@ -1,4 +1,5 @@
 import sys
+import pickle
 
 def format_label(label):
     if label == "entailment":
@@ -20,7 +21,7 @@ for line in fi:
         parts = line.strip().split(",")
         guess_dict[parts[0]] = format_label(parts[1])
 
-fi = open("../data/NLI/heuristics_evaluation_set.txt", "r")
+fi = open("../data/nli/heuristics_evaluation_set.txt", "r")
 
 correct_dict = {}
 first = True
@@ -77,6 +78,7 @@ for template in template_list:
     template_correct_count_dict[template] = 0
     template_incorrect_count_dict[template] = 0
 
+raw_result_doc = {} # for mcnemar's test
 for key in correct_dict:
     traits = correct_dict[key]
     heur = traits["heuristic"]
@@ -87,6 +89,7 @@ for key in correct_dict:
     correct = traits["gold_label"]
 
     if guess == correct:
+        raw_result_doc[key]='yes'
         if correct == "entailment":
             heuristic_ent_correct_count_dict[heur] += 1
         else:
@@ -95,6 +98,7 @@ for key in correct_dict:
         subcase_correct_count_dict[subcase] += 1
         template_correct_count_dict[template] += 1
     else:
+        raw_result_doc[key]='no'
         if correct == "entailment":
             heuristic_ent_incorrect_count_dict[heur] += 1
         else:
@@ -137,5 +141,5 @@ for template in template_list:
     percent = correct * 1.0 / total
     print(template + ": " + str(percent))
 
-
-
+# dump for mcnemar test
+pickle.dump( raw_result_doc, open( sys.argv[1][:-4]+'.p', "wb" ) )
