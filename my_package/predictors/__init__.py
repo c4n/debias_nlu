@@ -1,1 +1,1 @@
-from my_package.predictors  import cf_predictor
+from my_package.predictors  import cf_predictor, cf_predictor_reweighted

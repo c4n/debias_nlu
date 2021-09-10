@@ -138,7 +138,7 @@ class Predict(Subcommand):
         )
 
         subparser.add_argument(
-            "--cf_type", type=str, default="counterfactual_snli", help="weight for counterfactual component"
+            "--cf_type", type=str, default="counterfactual_snli", help="counterfactual type"
         )
 
         subparser.set_defaults(func=_cfpredict)
@@ -291,6 +291,7 @@ class _CFPredictManager:
         else:
             for batch_json in lazy_groups_of(self._get_json_data(), self._batch_size):
                 for model_input_json, result in zip(batch_json, self._predict_json(batch_json, self._cf_weight)):
+                    
                     self._maybe_print_to_console_and_file(
                         index, result, json.dumps(model_input_json)
                     )

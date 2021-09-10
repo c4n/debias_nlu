@@ -73,7 +73,7 @@ logger = logging.getLogger(__name__)
 def one_cf_evaluate(
     model: Model,
     data_loader: DataLoader,
-    cf: str = "normal",
+    cf_type: str = "normal",
     cuda_device: int = -1,
     batch_weight_key: str = None,
     output_file: str = None,
@@ -138,9 +138,9 @@ def one_cf_evaluate(
 
             # choose one type of output
 
-            if cf == "normal": 
+            if cf_type == "normal": 
                 output_dict = model(**batch)
-            elif cf[:4] == "mask":
+            else:
                 output_dict = model(**batch_cf)
 
             # probs = torch.nn.functional.softmax(output_dict['logits'], dim=-1)
@@ -151,6 +151,7 @@ def one_cf_evaluate(
             output_dict["loss"] = loss
             output_dict["ground_truth"] = batch['label']
             output_dict["sample_weight"] = batch['sample_weight']
+            # output_dict["overlap_score"] = batch['overlap_score']
             cf_accuracy(output_dict['logits'], batch['label'])
             # metrics = model.get_metrics()
             metrics['accuracy']=cf_accuracy.get_metric()
@@ -294,7 +295,7 @@ class EvaluateOne(Subcommand):
         )
 
         subparser.add_argument(
-            "--cf", type=str, default="normal", help="pick dataset normal or cf"
+            "--cf_type", type=str, default="normal", help="pick dataset normal or cf"
         )
 
 
@@ -334,8 +335,12 @@ def evaluate_from_args(args: argparse.Namespace) -> Dict[str, Any]:
     # if args.cf == 'mask_all':
     #     dataset_reader = CounterfactualSnliReader(tokenizer=pretrained_transformer_tokenizer,token_indexers={"tokens":token_indexer})
     # elif args.cf == 'mask_overlap': #mask_overlap
-    #     dataset_reader = CounterfactualSnliReaderMaskOL(tokenizer=pretrained_transformer_tokenizer,token_indexers={"tokens":token_indexer})        
-    dataset_reader = DatasetReader.from_params(args.cf_type,tokenizer=pretrained_transformer_tokenizer,token_indexers={"tokens":token_indexer})
+    #     dataset_reader = CounterfactualSnliReaderMaskOL(tokenizer=pretrained_transformer_tokenizer,token_indexers={"tokens":token_indexer})
+    #
+    if args.cf_type == "normal":         
+        dataset_reader = DatasetReader.from_params("counterfactual_snli",tokenizer=pretrained_transformer_tokenizer,token_indexers={"tokens":token_indexer})
+    else:
+        dataset_reader = DatasetReader.from_params(args.cf_type,tokenizer=pretrained_transformer_tokenizer,token_indexers={"tokens":token_indexer})      
     # dataset_reader = archive.validation_dataset_reader
 
     # split files
@@ -383,7 +388,7 @@ def evaluate_from_args(args: argparse.Namespace) -> Dict[str, Any]:
         metrics = one_cf_evaluate(
             model,
             data_loader,
-            args.cf,
+            args.cf_type,
             args.cuda_device,
             args.batch_weight_key,
             output_file=output_file_path,

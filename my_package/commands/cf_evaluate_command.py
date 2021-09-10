@@ -70,6 +70,7 @@ def cf_evaluate(
     model: Model,
     data_loader: DataLoader,
     cf_weight: float,
+    cf_method: str = "mult",
     cuda_device: int = -1,
     batch_weight_key: str = None,
     output_file: str = None,
@@ -130,7 +131,11 @@ def cf_evaluate(
             batch = nn_util.move_to_device(batch, cuda_device)
             output_dict = model(**batch)
             output_dict_cf = model(**batch_cf)
-            output_dict['logits'] = output_dict['logits']-cf_weight*output_dict_cf['logits']
+            if cf_method == 'mult':
+                output_dict['logits'] = output_dict['logits']-cf_weight*output_dict_cf['logits']
+            elif cf_method == 'add':
+                sample_weight = batch['sample_weight'].view(batch['sample_weight'].shape[0],1)
+                output_dict['logits'] = output_dict['logits']-(cf_weight+sample_weight)*output_dict_cf['logits']
             probs = torch.nn.functional.softmax(output_dict['logits'], dim=-1)
             output_dict['probs'] = probs
             # loss = output_dict.get("loss")
@@ -279,9 +284,16 @@ class Evaluate(Subcommand):
             default=False,
             help="outputs tqdm status on separate lines and slows tqdm refresh rate",
         )
+        subparser.add_argument(
+            "--cf_type", type=str, default="counterfactual_snli", help="counterfactual type"
+        )
 
         subparser.add_argument(
             "--cf_weight", type=float, default=0.5, help="weight for counterfactual component"
+        )
+
+        subparser.add_argument(
+            "--cf_method", type=str, default="mult", help="counterfactual type"
         )
 
 
@@ -318,7 +330,8 @@ def evaluate_from_args(args: argparse.Namespace) -> Dict[str, Any]:
 
     pretrained_transformer_tokenizer = PretrainedTransformerTokenizer(model_name=model_name,add_special_tokens = False)
     token_indexer  = PretrainedTransformerIndexer(model_name=model_name,max_length=max_length )
-    dataset_reader = CounterfactualSnliReader(tokenizer=pretrained_transformer_tokenizer,token_indexers={"tokens":token_indexer})
+    dataset_reader = DatasetReader.from_params(args.cf_type,tokenizer=pretrained_transformer_tokenizer,token_indexers={"tokens":token_indexer})
+    # dataset_reader = CounterfactualSnliReader(tokenizer=pretrained_transformer_tokenizer,token_indexers={"tokens":token_indexer})
     # dataset_reader = archive.validation_dataset_reader
 
     # split files
@@ -367,6 +380,7 @@ def evaluate_from_args(args: argparse.Namespace) -> Dict[str, Any]:
             model,
             data_loader,
             args.cf_weight,
+            args.cf_method,
             args.cuda_device,
             args.batch_weight_key,
             output_file=output_file_path,
