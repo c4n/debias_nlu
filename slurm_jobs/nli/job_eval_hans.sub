@@ -1,6 +1,6 @@
 #!/bin/bash -l
-#SBATCH --error=output/task.out.%j  # STDOUT output is written in slurm.out.JOBID
-#SBATCH --output=output/task.out.%j # STDOUT error is written in slurm.err.JOBID
+#SBATCH --error=/ist/users/canu/slurm_log/task.out.%j  # STDOUT output is written in slurm.out.JOBID
+#SBATCH --output=/ist/users/canu/slurm_log/task.out.%j # STDOUT error is written in slurm.err.JOBID
 #SBATCH --job-name=test_allennlp       # Job name
 #SBATCH --mem=16GB                  # Memory request for this job
 #SBATCH --nodes=1                   # The number of nodes
@@ -16,5 +16,5 @@
 
 cd ~/CI4RRL_project
 source ~/CI_env/bin/activate
-allennlp predict outputs/model.tar.gz spurious_corr/MNLI/data/heuristics_evaluation_set.jsonl --output-file han_result.jsonl --batch-size 16 --cuda-device 0 --predictor textual_entailment 
+allennlp predict outputs/model.tar.gz /ist/users/canu/debias_nlu/data/nli/heuristics_evaluation_set.jsonl --output-file han_result.jsonl --batch-size 16 --cuda-device 0 --predictor textual_entailment 
 

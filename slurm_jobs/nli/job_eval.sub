@@ -1,6 +1,6 @@
 #!/bin/bash -l
-#SBATCH --error=output/task.out.%j  # STDOUT output is written in slurm.out.JOBID
-#SBATCH --output=output/task.out.%j # STDOUT error is written in slurm.err.JOBID
+#SBATCH --error=/ist/users/canu/slurm_log/task.out.%j  # STDOUT output is written in slurm.out.JOBID
+#SBATCH --output=/ist/users/canu/slurm_log/task.out.%j # STDOUT error is written in slurm.err.JOBID
 #SBATCH --job-name=test_allennlp       # Job name
 #SBATCH --mem=16GB                  # Memory request for this job
 #SBATCH --nodes=1                   # The number of nodes
@@ -19,10 +19,10 @@ echo $MODEL_DIR
 cd ~/CI4RRL_project
 source ~/CI_env/bin/activate
 pwd
-allennlp evaluate $MODEL_DIR/model.tar.gz spurious_corr/MNLI/data/multinli_1.0_dev_mismatched.jsonl --output-file $MODEL_DIR/result.txt  --cuda-device 0 --include-package my_package # standard eval
+allennlp evaluate $MODEL_DIR/model.tar.gz /ist/users/canu/debias_nlu/data/nli/multinli_1.0_dev_mismatched.jsonl --output-file $MODEL_DIR/result.txt  --cuda-device 0 --include-package my_package # standard eval
 echo $MODEL_DIR
 # hans
-allennlp predict $MODEL_DIR/model.tar.gz spurious_corr/MNLI/data/heuristics_evaluation_set.jsonl --output-file $MODEL_DIR/hans_result.jsonl --batch-size 16 --cuda-device 0 --predictor textual_entailment --include-package my_package
+allennlp predict $MODEL_DIR/model.tar.gz /ist/users/canu/debias_nlu/data/nli/heuristics_evaluation_set.jsonl --output-file $MODEL_DIR/hans_result.jsonl --batch-size 16 --cuda-device 0 --predictor textual_entailment --include-package my_package
 python hans_parser.py -i $MODEL_DIR/hans_result.jsonl -o $MODEL_DIR/hans.out
 cd spurious_corr/MNLI/hans/
 python evaluate_heur_output.py /ist/users/canu/CI4RRL_project/$MODEL_DIR/hans.out > /ist/users/canu/CI4RRL_project/$MODEL_DIR/hans_results.txt
@@ -34,37 +34,37 @@ cd ~/CI4RRL_project
 echo $MODEL_DIR
 
 echo "Antonym:"
-allennlp evaluate $MODEL_DIR/model.tar.gz spurious_corr/MNLI/data/naik_stress_test/stress_tests/Antonym/multinli_0.9_antonym_mismatched.jsonl --output-file $MODEL_DIR/antonym_result.txt  --cuda-device 0 --include-package my_package 
+allennlp evaluate $MODEL_DIR/model.tar.gz /ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Antonym/multinli_0.9_antonym_mismatched.jsonl --output-file $MODEL_DIR/antonym_result.txt  --cuda-device 0 --include-package my_package 
 #sed -i '1s/^/antonym/' $MODEL_DIR/antonym_result.txt
 
 echo "Numerical_Reasoning:"
-allennlp evaluate $MODEL_DIR/model.tar.gz spurious_corr/MNLI/data/naik_stress_test/stress_tests/Numerical_Reasoning/multinli_0.9_quant_hard.jsonl --output-file $MODEL_DIR/numerical_reasoning_result.txt  --cuda-device 0 --include-package my_package 
+allennlp evaluate $MODEL_DIR/model.tar.gz /ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Numerical_Reasoning/multinli_0.9_quant_hard.jsonl --output-file $MODEL_DIR/numerical_reasoning_result.txt  --cuda-device 0 --include-package my_package 
 #sed -i '1s/^/numerical/' $MODEL_DIR/numerical_reasoning_result.txt
 
 echo "Word_Overlap:"
-allennlp evaluate $MODEL_DIR/model.tar.gz spurious_corr/MNLI/data/naik_stress_test/stress_tests/Word_Overlap/multinli_0.9_taut2_mismatched.jsonl --output-file $MODEL_DIR/word_overlap_result.txt  --cuda-device 0 --include-package my_package 
+allennlp evaluate $MODEL_DIR/model.tar.gz /ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Word_Overlap/multinli_0.9_taut2_mismatched.jsonl --output-file $MODEL_DIR/word_overlap_result.txt  --cuda-device 0 --include-package my_package 
 #sed -i '1s/^/word_overlap/' $MODEL_DIR/word_overlap_result.txt
 
 echo "Negation:"
-allennlp evaluate $MODEL_DIR/model.tar.gz spurious_corr/MNLI/data/naik_stress_test/stress_tests/Negation/multinli_0.9_negation_mismatched.jsonl --output-file $MODEL_DIR/negation_result.txt  --cuda-device 0 --include-package my_package 
+allennlp evaluate $MODEL_DIR/model.tar.gz /ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Negation/multinli_0.9_negation_mismatched.jsonl --output-file $MODEL_DIR/negation_result.txt  --cuda-device 0 --include-package my_package 
 #sed -i '1s/^/negation/' $MODEL_DIR/negation_result.txt
 
 echo "Length_Mismatch:"
-allennlp evaluate $MODEL_DIR/model.tar.gz spurious_corr/MNLI/data/naik_stress_test/stress_tests/Length_Mismatch/multinli_0.9_length_mismatch_mismatched.jsonl --output-file $MODEL_DIR/length_mismatch_result.txt  --cuda-device 0 --include-package my_package 
+allennlp evaluate $MODEL_DIR/model.tar.gz /ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Length_Mismatch/multinli_0.9_length_mismatch_mismatched.jsonl --output-file $MODEL_DIR/length_mismatch_result.txt  --cuda-device 0 --include-package my_package 
 #sed -i '1s/^/length_mismatch/' $MODEL_DIR/length_mismatch_result.txt
 
 echo "Spelling_Error:"
-allennlp evaluate $MODEL_DIR/model.tar.gz spurious_corr/MNLI/data/naik_stress_test/stress_tests/Spelling_Error/multinli_0.9_dev_gram_all_mismatched.jsonl --output-file $MODEL_DIR/spelling_result.txt  --cuda-device 0 --include-package my_package 
+allennlp evaluate $MODEL_DIR/model.tar.gz /ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Spelling_Error/multinli_0.9_dev_gram_all_mismatched.jsonl --output-file $MODEL_DIR/spelling_result.txt  --cuda-device 0 --include-package my_package 
 #sed -i '1s/^/spelling_error/' $MODEL_DIR/spelling_result.txt
 
 cat $MODEL_DIR/antonym_result.txt $MODEL_DIR/numerical_reasoning_result.txt $MODEL_DIR/numerical_reasoning_result.txt $MODEL_DIR/word_overlap_result.txt $MODEL_DIR/negation_result.txt $MODEL_DIR/length_mismatch_result.txt $MODEL_DIR/spelling_result.txt > $MODEL_DIR/naik_result.txt
 
 
 echo "SNLI_HARD:"
-allennlp evaluate $MODEL_DIR/model.tar.gz spurious_corr/MNLI/data/snli_1.0_test_hard.jsonl --output-file $MODEL_DIR/snli_hard_result.txt  --cuda-device 0 --include-package my_package 
+allennlp evaluate $MODEL_DIR/model.tar.gz /ist/users/canu/debias_nlu/data/nli/snli_1.0_test_hard.jsonl --output-file $MODEL_DIR/snli_hard_result.txt  --cuda-device 0 --include-package my_package 
 
 echo "MNLI_HARD_dev_mm:"
-allennlp evaluate $MODEL_DIR/model.tar.gz spurious_corr/MNLI/data/dev_mismatched_hard.jsonl --output-file $MODEL_DIR/mnli_hard_dev_mm_result.txt  --cuda-device 0 --include-package my_package 
+allennlp evaluate $MODEL_DIR/model.tar.gz /ist/users/canu/debias_nlu/data/nli/dev_mismatched_hard.jsonl --output-file $MODEL_DIR/mnli_hard_dev_mm_result.txt  --cuda-device 0 --include-package my_package 
 
 
 

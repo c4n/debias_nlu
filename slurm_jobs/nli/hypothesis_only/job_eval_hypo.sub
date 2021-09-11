@@ -1,6 +1,6 @@
 #!/bin/bash -l
-#SBATCH --error=output/task.out.%j  # STDOUT output is written in slurm.out.JOBID
-#SBATCH --output=output/task.out.%j # STDOUT error is written in slurm.err.JOBID
+#SBATCH --error=/ist/users/canu/slurm_log/task.out.%j  # STDOUT output is written in slurm.out.JOBID
+#SBATCH --output=/ist/users/canu/slurm_log/task.out.%j # STDOUT error is written in slurm.err.JOBID
 #SBATCH --job-name=test_allennlp       # Job name
 #SBATCH --mem=16GB                  # Memory request for this job
 #SBATCH --nodes=1                   # The number of nodes
@@ -11,8 +11,8 @@
 
  module load Anaconda3
 source ~/CI_env/bin/activate
-allennlp evaluate outputs_reverse/model.tar.gz spurious_corr/MNLI/data/hypo_only_multinli_1.0_dev_mismatched.jsonl --output-file hypo_only_result.txt --cuda-device 0 --include-package my_package 
-allennlp predict outputs_reverse/model.tar.gz spurious_corr/MNLI/data/hypo_only_heuristics_evaluation_set.jsonl --output-file hypo_han_result.jsonl --batch-size 16 --cuda-device 0 --predictor textual_entailment 
+allennlp evaluate outputs_reverse/model.tar.gz /ist/users/canu/debias_nlu/data/nli/hypo_only_multinli_1.0_dev_mismatched.jsonl --output-file hypo_only_result.txt --cuda-device 0 --include-package my_package 
+allennlp predict outputs_reverse/model.tar.gz /ist/users/canu/debias_nlu/data/nli/hypo_only_heuristics_evaluation_set.jsonl --output-file hypo_han_result.jsonl --batch-size 16 --cuda-device 0 --predictor textual_entailment 
 python hans_parser.py -i hypo_hans_result.jsonl -o hypo_hans.out
 cd spurious_corr/mnli/hans/
 python evaluate_heur_output.py /ist/users/canu/ci4rrl_project/hypo_hans.out

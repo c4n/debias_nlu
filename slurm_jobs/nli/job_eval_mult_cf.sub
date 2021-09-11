@@ -1,6 +1,6 @@
 #!/bin/bash -l
-#SBATCH --error=output/task.out.%j  # STDOUT output is written in slurm.out.JOBID
-#SBATCH --output=output/task.out.%j # STDOUT error is written in slurm.err.JOBID
+#SBATCH --error=/ist/users/canu/slurm_log/task.out.%j  # STDOUT output is written in slurm.out.JOBID
+#SBATCH --output=/ist/users/canu/slurm_log/task.out.%j # STDOUT error is written in slurm.err.JOBID
 #SBATCH --job-name=eval       # Job name
 #SBATCH --mem=16GB                  # Memory request for this job
 #SBATCH --nodes=1                   # The number of nodes
@@ -20,7 +20,7 @@ echo $MODEL_DIR
 cd ~/CI4RRL_project
 source ~/CI_env/bin/activate
 MNLI_PARAMS=($MODEL_DIR/model.tar.gz  
-spurious_corr/MNLI/data/multinli_1.0_dev_mismatched.jsonl:spurious_corr/MNLI/data/snli_1.0_test_hard.jsonl:spurious_corr/MNLI/data/dev_mismatched_hard.jsonl:spurious_corr/MNLI/data/test_kaushik_RP.jsonl:spurious_corr/MNLI/data/test_kaushik_RH.jsonl:spurious_corr/MNLI/data/test_kaushik_combined.jsonl
+/ist/users/canu/debias_nlu/data/nli/multinli_1.0_dev_mismatched.jsonl:/ist/users/canu/debias_nlu/data/nli/snli_1.0_test_hard.jsonl:/ist/users/canu/debias_nlu/data/nli/dev_mismatched_hard.jsonl:/ist/users/canu/debias_nlu/data/nli/test_kaushik_RP.jsonl:/ist/users/canu/debias_nlu/data/nli/test_kaushik_RH.jsonl:/ist/users/canu/debias_nlu/data/nli/test_kaushik_combined.jsonl
 --output-file=$MODEL_DIR/cf_result.txt:$MODEL_DIR/cf_snli_hard_result.txt:$MODEL_DIR/cf_mnli_hard_dev_mm_result.txt:$MODEL_DIR/cf_kaushik_rp_result.txt:$MODEL_DIR/cf_kaushik_rh_result.txt:$MODEL_DIR/cf_kaushik_combined_result.txt
 --cuda-device=0
 --cf_weight=0.9507143064099162
@@ -32,7 +32,7 @@ echo $MODEL_DIR
 
 
 # hans
-allennlp cf_predict $MODEL_DIR/model.tar.gz spurious_corr/MNLI/data/heuristics_evaluation_set.jsonl --output-file $MODEL_DIR/cf_hans_result_ray1.jsonl --batch-size 64 --cuda-device 0 --cf_weight 0.9507143064099162 --predictor cf_textual_entailment --include-package my_package
+allennlp cf_predict $MODEL_DIR/model.tar.gz /ist/users/canu/debias_nlu/data/nli/heuristics_evaluation_set.jsonl --output-file $MODEL_DIR/cf_hans_result_ray1.jsonl --batch-size 64 --cuda-device 0 --cf_weight 0.9507143064099162 --predictor cf_textual_entailment --include-package my_package
 python hans_parser.py -i $MODEL_DIR/cf_hans_result_ray1.jsonl -o $MODEL_DIR/cf_hans_ray1.out
 cd spurious_corr/MNLI/hans/
 python evaluate_heur_output.py /ist/users/canu/CI4RRL_project/$MODEL_DIR/cf_hans_ray1.out > /ist/users/canu/CI4RRL_project/$MODEL_DIR/cf_hans_results_ray1.txt
@@ -45,7 +45,7 @@ echo $MODEL_DIR
 
 echo "naik"
 NAIK_PARAMS=($MODEL_DIR/model.tar.gz  
-spurious_corr/MNLI/data/naik_stress_test/stress_tests/Antonym/multinli_0.9_antonym_mismatched.jsonl:spurious_corr/MNLI/data/naik_stress_test/stress_tests/Numerical_Reasoning/multinli_0.9_quant_hard.jsonl:spurious_corr/MNLI/data/naik_stress_test/stress_tests/Word_Overlap/multinli_0.9_taut2_mismatched.jsonl:spurious_corr/MNLI/data/naik_stress_test/stress_tests/Negation/multinli_0.9_negation_mismatched.jsonl:spurious_corr/MNLI/data/naik_stress_test/stress_tests/Length_Mismatch/multinli_0.9_length_mismatch_mismatched.jsonl:spurious_corr/MNLI/data/naik_stress_test/stress_tests/Spelling_Error/multinli_0.9_dev_gram_all_mismatched.jsonl
+/ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Antonym/multinli_0.9_antonym_mismatched.jsonl:/ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Numerical_Reasoning/multinli_0.9_quant_hard.jsonl:/ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Word_Overlap/multinli_0.9_taut2_mismatched.jsonl:/ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Negation/multinli_0.9_negation_mismatched.jsonl:/ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Length_Mismatch/multinli_0.9_length_mismatch_mismatched.jsonl:/ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Spelling_Error/multinli_0.9_dev_gram_all_mismatched.jsonl
 --output-file=$MODEL_DIR/cf_antonym_result.txt:$MODEL_DIR/cf_numerical_reasoning_result.txt:$MODEL_DIR/cf_word_overlap_result.txt:$MODEL_DIR/cf_negation_result.txt:$MODEL_DIR/cf_length_mismatch_result.txt:$MODEL_DIR/cf_spelling_result.txt
 --cuda-device=0
 --cf_weight=0.9507143064099162

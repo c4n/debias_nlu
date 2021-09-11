@@ -20,10 +20,10 @@ local transformer_dim = 1024;
       }
     }
   },
-  "train_data_path": "spurious_corr/MNLI/data/multinli_1.0_train.jsonl",
- // "train_data_path": "spurious_corr/MNLI/data/multinli_small_train.jsonl",
-  "validation_data_path": "spurious_corr/MNLI/data/multinli_1.0_dev_matched.jsonl",
-  "test_data_path": "spurious_corr/MNLI/data/multinli_1.0_dev_mismatched.jsonl",
+  "train_data_path": "/ist/users/canu/debias_nlu/data/nli/multinli_1.0_train.jsonl",
+ // "train_data_path": "/ist/users/canu/debias_nlu/data/nli/multinli_small_train.jsonl",
+  "validation_data_path": "/ist/users/canu/debias_nlu/data/nli/multinli_1.0_dev_matched.jsonl",
+  "test_data_path": "/ist/users/canu/debias_nlu/data/nli/multinli_1.0_dev_mismatched.jsonl",
   "model": {
     "type": "adv_fc_classifier",
     "text_field_embedder": {

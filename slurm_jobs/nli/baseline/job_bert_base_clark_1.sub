@@ -1,6 +1,6 @@
 #!/bin/bash -l
-#SBATCH --error=output/task.out.%j  # STDOUT output is written in slurm.out.JOBID
-#SBATCH --output=output/task.out.%j # STDOUT error is written in slurm.err.JOBID
+#SBATCH --error=/ist/users/canu/slurm_log/task.out.%j  # STDOUT output is written in slurm.out.JOBID
+#SBATCH --output=/ist/users/canu/slurm_log/task.out.%j # STDOUT error is written in slurm.err.JOBID
 #SBATCH --job-name=test_allennlp       # Job name
 #SBATCH --mem=64GB                  # Memory request for this job
 #SBATCH --nodes=1                   # The number of nodes
@@ -14,9 +14,9 @@
  module load cuDNN/7
  module load HDF5
 
-cd ~/CI4RRL_project
+cd ~/debias_nlu
 source ~/CI_env/bin/activate
-allennlp train spurious_corr/MNLI/training_config/mnli_bert_base_clark_1.jsonnet -s outputs_bert_base_clark_1/
+allennlp train /ist/users/canu/debias_nlu/configs/nli/baseline/mnli_bert_base_clark_1.jsonnet -s outputs_bert_base_clark_1/
 
 #psql training_strategy=cross_entropy
 #psql debiasing_method=none
