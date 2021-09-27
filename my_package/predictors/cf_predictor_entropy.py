@@ -14,7 +14,7 @@ from allennlp.data.tokenizers.spacy_tokenizer import SpacyTokenizer
 from allennlp.common.util import dump_metrics, sanitize, int_to_device
 from scipy.special import softmax
 
-@Predictor.register("cf_textual_entailment_reweighted")
+@Predictor.register("cf_textual_entailment_entropy")
 class CounterfactualTextualEntailmentPredictor(Predictor):
     """
     Predictor for the [`DecomposableAttention`](../models/decomposable_attention.md) model.
@@ -94,7 +94,11 @@ class CounterfactualTextualEntailmentPredictor(Predictor):
         outputs = self._model.forward_on_instances(instances)
         cf_outputs = self._model.forward_on_instances(cf_instances)
         for i in range(len(outputs)):
-            outputs[i]['logits'] = outputs[i]['logits'] - (cf_weight+instances[i].fields['sample_weight'].value) * cf_outputs[i]['logits']
+            n_class = outputs[i]['logits'].shape[0]
+            factual_softmax = softmax(outputs[i]['logits'])
+            factual_entropy = -sum(factual_softmax*np.log(factual_softmax)/np.log(n_class))
+            # outputs[i]['logits'] = outputs[i]['logits'] -  ((factual_entropy - 1.0) * cf_weight * cf_outputs[i]['logits'])
+            outputs[i]['logits'] = outputs[i]['logits'] -  cf_weight * cf_outputs[i]['logits']
             outputs[i]['probs'] = softmax(outputs[i]['logits'])
             outputs[i]['label'] = label_dict[np.argmax(outputs[i]['probs'])]
         return sanitize(outputs)

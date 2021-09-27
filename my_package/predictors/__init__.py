@@ -1,1 +1,1 @@
-from my_package.predictors  import cf_predictor, cf_predictor_reweighted
+from my_package.predictors  import cf_predictor, cf_predictor_entropy
