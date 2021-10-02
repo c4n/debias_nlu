@@ -149,3 +149,11 @@ class FeverReader(DatasetReader):
     @staticmethod
     def map_label(label: str) -> str:
         return FeverReader.MAP_LABELS[label]
+
+    @overrides
+    def apply_token_indexers(self, instance: Instance) -> Instance:
+        if "tokens" in instance.fields:
+            instance.fields["tokens"]._token_indexers = self._token_indexers
+        else:
+            instance.fields["premise"]._token_indexers = self._token_indexers
+            instance.fields["hypothesis"]._token_indexers = self._token_indexers
