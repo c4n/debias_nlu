@@ -42,8 +42,8 @@ def maybe_collapse_label(label: str, collapse: bool):
     return label
 
 
-@DatasetReader.register("aug_overlap_fever")
-class AugOverlapFeverReader(DatasetReader):
+@DatasetReader.register("fever")
+class FeverReader(DatasetReader):
     """
     Reads a file from the FEVER dataset.  This data is
     formatted as jsonl, one json-formatted instance per line.  The keys in the data are
@@ -104,8 +104,10 @@ class AugOverlapFeverReader(DatasetReader):
             while line:
                 doc = ast.literal_eval(line)
 
-                label = AugOverlapFeverReader.map_label(doc["label"])
-                premise = doc["evidence"]
+                label_key = "gold_label" if "gold_label" in doc.keys() else "label"
+                label = FeverReader.map_label(doc[label_key])
+                evidence_key = "evidence_sentence" if "evidence_sentence" in doc.keys() else "evidence"
+                premise = doc[evidence_key]
                 hypothesis = doc["claim"]
 
                 yield self.text_to_instance(premise, hypothesis, label)
@@ -117,7 +119,6 @@ class AugOverlapFeverReader(DatasetReader):
         premise: str,
         hypothesis: str,
         label: str = None,
-        sample_weight: float = None,
     ) -> Instance:
         fields: Dict[str, Field] = {}
         premise = self._tokenizer.tokenize(premise)
@@ -143,12 +144,16 @@ class AugOverlapFeverReader(DatasetReader):
                 label, self.collapse_labels)
             fields["label"] = LabelField(maybe_collapsed_label)
 
-        # overlap score
-        # if sample_weight is not None:
-        #     fields["sample_weight"] = FloatField(sample_weight)
-
         return Instance(fields)
 
     @staticmethod
     def map_label(label: str) -> str:
-        return AugOverlapFeverReader.MAP_LABELS[label]
+        return FeverReader.MAP_LABELS[label]
+
+    @overrides
+    def apply_token_indexers(self, instance: Instance) -> Instance:
+        if "tokens" in instance.fields:
+            instance.fields["tokens"]._token_indexers = self._token_indexers
+        else:
+            instance.fields["premise"]._token_indexers = self._token_indexers
+            instance.fields["hypothesis"]._token_indexers = self._token_indexers
