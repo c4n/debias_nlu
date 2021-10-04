@@ -1,1 +1,1 @@
-from .reader import AugOverlapFeverReader
+from .reader import FeverReader
