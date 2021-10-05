@@ -2,4 +2,5 @@ from my_package.data.dataset_readers  import counterfactual_reader, counterfactu
 from my_package.data.dataset_readers  import grad_reverse_overlap_readers
 from my_package.data.dataset_readers  import overlap_score_reader
 from my_package.data.dataset_readers  import sample_weight_reader
+from my_package.data.dataset_readers  import distill_reader
 from my_package.data.dataset_readers.fever import reader as fever_reader
