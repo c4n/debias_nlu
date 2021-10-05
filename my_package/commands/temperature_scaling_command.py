@@ -20,6 +20,7 @@ from my_package.modules import temperature_scaling
 from my_package.modules.temperature_scaling import *
 
 import argparse
+import logging
 from allennlp.commands.subcommand import Subcommand
 from allennlp.common import logging as common_logging
 from allennlp.common.util import prepare_environment

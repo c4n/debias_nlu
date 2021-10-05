@@ -27,6 +27,7 @@ from allennlp.common import util
 from allennlp.common.registrable import Registrable
 
 #add field
+import torch
 import numpy as np
 from my_package.data.fields.float_fields import FloatField
 from allennlp.data.fields.array_field import ArrayField
@@ -104,11 +105,11 @@ class DistillSnliReader(DatasetReader):
                     example for example in example_iter if example.get("gold_label") != "-"
                 )
             for example in self.shard_iterable(filtered_example_iter):
-                distll_probs = example.get("distill_probs")
+                distill_probs = example.get("distill_probs")
                 label = example.get("gold_label")
                 premise = example["sentence1"]
                 hypothesis = example["sentence2"]
-                yield self.text_to_instance(premise, hypothesis, label, distll_probs)
+                yield self.text_to_instance(premise, hypothesis, label, distill_probs)
 
     @overrides
     def text_to_instance(
@@ -116,7 +117,7 @@ class DistillSnliReader(DatasetReader):
         premise: str,
         hypothesis: str,
         label: str = None,
-        distll_probs: float = None,
+        distill_probs: float = None,
     ) -> Instance:
 
         fields: Dict[str, Field] = {}
@@ -142,8 +143,8 @@ class DistillSnliReader(DatasetReader):
             maybe_collapsed_label = maybe_collapse_label(label, self.collapse_labels)
             fields["label"] = LabelField(maybe_collapsed_label)
 
-        if distll_probs is not None:
-            fields["distll_probs"] = ArrayField(np.array(distll_probs))
+        if distill_probs is not None:
+            fields["distill_probs"] = ArrayField(np.array(distill_probs,dtype='float32'))
 
         return Instance(fields)
 
