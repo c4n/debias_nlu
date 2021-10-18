@@ -1,4 +1,5 @@
 import argparse
+import json
 from typing import Dict, List
 
 import pandas as pd
@@ -15,7 +16,12 @@ NAME_MAPPING_TABLE = {
 def _write_to_jsonl(_x_train: List[Dict], _y_train: List[Dict], path: str) -> None:
     f = open(path, 'w')
     for _x, _y in zip(_x_train, _y_train):
-        f.write("%s\n" % {**_x, **_y})
+        # if _x["sentence1"] == "How can I create an Android app?":
+        #     print(type(_x["sentence2"]), _x["sentence2"])
+        #     exit()
+        if pd.isna(_x["sentence1"]) or pd.isna(_x["sentence2"]):
+            continue        
+        f.write("%s\n" % json.dumps({**_x, **_y}))
 
     f.close()
 

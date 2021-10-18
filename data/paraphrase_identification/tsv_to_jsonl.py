@@ -1,4 +1,5 @@
 import argparse
+import json
 
 import pandas as pd
 
@@ -25,6 +26,8 @@ if __name__ == "__main__":
 
     f = open(args.jsonl_file, 'w')
     for datum in source_df.to_dict('records'):
-        f.write("%s\n" % datum)
+        if pd.isna(datum["sentence1"]) or pd.isna(datum["sentence2"]):
+            continue
+        f.write("%s\n" % json.dumps(datum))
 
     f.close()
