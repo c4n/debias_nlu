@@ -1,0 +1,31 @@
+#!/bin/bash -l
+#SBATCH --error=output/task.out.%j  # STDOUT output is written in slurm.out.JOBID
+#SBATCH --output=output/task.out.%j # STDOUT error is written in slurm.err.JOBID
+#SBATCH --job-name=fever_baseline       # Job name
+#SBATCH --mem=64GB                  # Memory request for this job
+#SBATCH --nodes=1                   # The number of nodes
+#SBATCH --partition=gpu-cluster
+#SBATCH --account=scads
+#SBATCH --time=72:0:0                # Runing time 72 hours
+#SBATCH --gpus=1                    # A number of GPUs  
+
+module load Anaconda3
+module load CUDA/10.1
+module load cuDNN/7
+module load HDF5
+
+
+TRANSFORMERS_OFFLINE=1
+HF_DATASETS_OFFLINE=1
+
+RESULT_DIR=${1:-results/outputs_fever_bert_base_1}
+
+cd ~/debias_nlu
+source ~/envNLI/bin/activate
+
+python3 -c "import torch; print('# Visible GPUs: ', torch.cuda.device_count());"
+
+allennlp evaluate $RESULT_DIR/model.tar.gz\
+    data/fact_verification/fever_symmetric_generated.jsonl\
+    --output-file $RESULT_DIR/metrics_test_baseline.json\
+    --include-package my_package

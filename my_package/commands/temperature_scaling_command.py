@@ -19,16 +19,25 @@ import pickle
 from my_package.modules import temperature_scaling
 from my_package.modules.temperature_scaling import *
 
+import argparse
+import logging
+from allennlp.commands.subcommand import Subcommand
+from allennlp.common import logging as common_logging
+from allennlp.common.util import prepare_environment
+
+from overrides import overrides
+
+logger = logging.getLogger(__name__)
 
 @Subcommand.register("temp_scale")
-class TempuratureScaledModel(Subcommand):
+class TemperatureScaledModel(Subcommand):
     @overrides
     def add_subparser(
         self, parser: argparse._SubParsersAction
     ) -> argparse.ArgumentParser:
-        description = """Get tempurature scaled model"""
+        description = """Get temperature  scaled model"""
         subparser = parser.add_parser(
-            self.name, description=description, help="Get tempurature scaled model."
+            self.name, description=description, help="Get temperature  scaled model."
         )
 
         subparser.add_argument(
