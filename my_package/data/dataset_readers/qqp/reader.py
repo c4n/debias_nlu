@@ -1,4 +1,3 @@
-import ast
 import json
 from dataclasses import dataclass
 import itertools
@@ -53,6 +52,7 @@ class QQPReader(DatasetReader):
         self,
         tokenizer: Optional[Tokenizer] = None,
         token_indexers: Dict[str, TokenIndexer] = None,
+        combine_input_fields: Optional[bool] = None,
         ** kwargs,
     ) -> None:
         super().__init__(
@@ -75,7 +75,7 @@ class QQPReader(DatasetReader):
         with open(cached_path(file_path), 'r') as fh:
             line = fh.readline()
             while line:
-                doc = ast.literal_eval(line)
+                doc = json.loads(line)
 
                 label = "paraphrase" if doc["is_duplicate"] else "non-paraphrase"
                 premise = doc["sentence1"]
@@ -92,8 +92,15 @@ class QQPReader(DatasetReader):
         label: str = None,
     ) -> Instance:
         fields: Dict[str, Field] = {}
+
         premise = self._tokenizer.tokenize(premise)
+        # try:
         hypothesis = self._tokenizer.tokenize(hypothesis)
+        # except:
+        #     print("premise: ", premise)
+        #     print("hypothesis: ", hypothesis)
+        #     print("label: ", label)
+        #     exit()
 
         if self._combine_input_fields:
             tokens = self._tokenizer.add_special_tokens(premise, hypothesis)
