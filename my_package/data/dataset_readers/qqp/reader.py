@@ -66,9 +66,11 @@ class QQPReader(DatasetReader):
         self._token_indexers = token_indexers or {
             "tokens": SingleIdTokenIndexer()
         }
-        self._combine_input_fields = isinstance(
-            self._tokenizer, PretrainedTransformerTokenizer
-        )
+
+        if combine_input_fields is not None:
+            self._combine_input_fields = combine_input_fields
+        else:
+            self._combine_input_fields = isinstance(self._tokenizer, PretrainedTransformerTokenizer)
 
     @overrides
     def _read(self, file_path: str):
@@ -92,15 +94,8 @@ class QQPReader(DatasetReader):
         label: str = None,
     ) -> Instance:
         fields: Dict[str, Field] = {}
-
         premise = self._tokenizer.tokenize(premise)
-        # try:
         hypothesis = self._tokenizer.tokenize(hypothesis)
-        # except:
-        #     print("premise: ", premise)
-        #     print("hypothesis: ", hypothesis)
-        #     print("label: ", label)
-        #     exit()
 
         if self._combine_input_fields:
             tokens = self._tokenizer.add_special_tokens(premise, hypothesis)
@@ -116,7 +111,8 @@ class QQPReader(DatasetReader):
                 "hypothesis_tokens": [x.text for x in hypothesis_tokens],
             }
             fields["metadata"] = MetadataField(metadata)
-            fields["label"] = LabelField(label)
+
+        fields["label"] = LabelField(label)
 
         return Instance(fields)
 

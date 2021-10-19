@@ -21,7 +21,7 @@ local transformer_dim = 768;
   "validation_data_path": "data/paraphrase_identification/qqp.dev.jsonl",
   "test_data_path": "data/paraphrase_identification/paws.dev_and_test.jsonl",
   "model": {
-    "type": "basic_classifier",
+    "type": "custom_basic_classifier",
     "text_field_embedder": {
       "token_embedders": {
         "tokens": {
@@ -51,7 +51,7 @@ local transformer_dim = 768;
     }
   },
   "trainer": {
-    "num_epochs": 3,
+    "num_epochs": 4,
     "validation_metric": "+accuracy",
     "learning_rate_scheduler": {
       "type": "slanted_triangular",
