@@ -14,44 +14,45 @@
  module load cuDNN/7
  module load HDF5
 
-MODEL_DIR="outputs_bert_base_clark_2"
-CF_WEIGHT="outputs_bert_base_clark_2"
+MODEL_DIR="/ist/ist-share/scads/can/outputs_distill_bert_base_clark_1_testrun"
+CF_WEIGHT="/ist/ist-share/scads/can/outputs_distill_bert_base_clark_1_testrun"
 # mnli + mnli/snli hard + kaushik 
 echo $MODEL_DIR
-cd ~/CI4RRL_project
+cd ~/debias_nlu
 source ~/CI_env/bin/activate
-MNLI_PARAMS=($MODEL_DIR/model.tar.gz  
-/ist/users/canu/debias_nlu/data/nli/multinli_1.0_dev_mismatched.jsonl:/ist/users/canu/debias_nlu/data/nli/snli_1.0_test_hard.jsonl:/ist/users/canu/debias_nlu/data/nli/dev_mismatched_hard.jsonl:/ist/users/canu/debias_nlu/data/nli/test_kaushik_RP.jsonl:/ist/users/canu/debias_nlu/data/nli/test_kaushik_RH.jsonl:/ist/users/canu/debias_nlu/data/nli/test_kaushik_combined.jsonl
---output-file=$MODEL_DIR/result.txt:$MODEL_DIR/snli_hard_result.txt:$MODEL_DIR/mnli_hard_dev_mm_result.txt:$MODEL_DIR/kaushik_rp_result.txt:$MODEL_DIR/kaushik_rh_result.txt:$MODEL_DIR/kaushik_combined_result.txt
---cuda-device=0
---include-package=my_package)
-allennlp evaluate_mult ${MNLI_PARAMS[@]} # standard eval
-echo $MODEL_DIR
+# MNLI_PARAMS=($MODEL_DIR/model.tar.gz  
+# /ist/users/canu/debias_nlu/data/nli/multinli_1.0_dev_mismatched.jsonl:/ist/users/canu/debias_nlu/data/nli/snli_1.0_test_hard.jsonl:/ist/users/canu/debias_nlu/data/nli/dev_mismatched_hard.jsonl:/ist/users/canu/debias_nlu/data/nli/test_kaushik_RP.jsonl:/ist/users/canu/debias_nlu/data/nli/test_kaushik_RH.jsonl:/ist/users/canu/debias_nlu/data/nli/test_kaushik_combined.jsonl
+# --output-file=$MODEL_DIR/result.txt:$MODEL_DIR/snli_hard_result.txt:$MODEL_DIR/mnli_hard_dev_mm_result.txt:$MODEL_DIR/kaushik_rp_result.txt:$MODEL_DIR/kaushik_rh_result.txt:$MODEL_DIR/kaushik_combined_result.txt
+# --cuda-device=0
+# --include-package=my_package)
+# allennlp evaluate_mult ${MNLI_PARAMS[@]} # standard eval
+# echo $MODEL_DIR
 
-# hans
-allennlp predict $MODEL_DIR/model.tar.gz /ist/users/canu/debias_nlu/data/nli/heuristics_evaluation_set.jsonl --output-file $MODEL_DIR/hans_result.jsonl --batch-size 16 --cuda-device 0 --predictor textual_entailment --include-package my_package
+# # hans
+# allennlp predict $MODEL_DIR/model.tar.gz /ist/users/canu/debias_nlu/data/nli/heuristics_evaluation_set.jsonl --output-file $MODEL_DIR/hans_result.jsonl --batch-size 16 --cuda-device 0 --predictor textual_entailment --include-package my_package
+
+cd utils/
 python hans_parser.py -i $MODEL_DIR/hans_result.jsonl -o $MODEL_DIR/hans.out
-cd spurious_corr/MNLI/hans/
-python evaluate_heur_output.py /ist/users/canu/CI4RRL_project/$MODEL_DIR/hans.out > /ist/users/canu/CI4RRL_project/$MODEL_DIR/hans_results.txt
+python evaluate_heur_output.py $MODEL_DIR/hans.out > $MODEL_DIR/hans_results.txt
 
 
 
 echo $MODEL_DIR
 
-# naik stress test
-echo "Stress Test (Naik et al., 2018)" 
-cd ~/CI4RRL_project
+# # naik stress test
+# echo "Stress Test (Naik et al., 2018)" 
+# cd ~/debias_nlu
 
-echo $MODEL_DIR
+# echo $MODEL_DIR
 
-echo "naik"
-NAIK_PARAMS=($MODEL_DIR/model.tar.gz  
-/ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Antonym/multinli_0.9_antonym_mismatched.jsonl:/ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Numerical_Reasoning/multinli_0.9_quant_hard.jsonl:/ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Word_Overlap/multinli_0.9_taut2_mismatched.jsonl:/ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Negation/multinli_0.9_negation_mismatched.jsonl:/ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Length_Mismatch/multinli_0.9_length_mismatch_mismatched.jsonl:/ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Spelling_Error/multinli_0.9_dev_gram_all_mismatched.jsonl
---output-file=$MODEL_DIR/antonym_result.txt:$MODEL_DIR/numerical_reasoning_result.txt:$MODEL_DIR/word_overlap_result.txt:$MODEL_DIR/negation_result.txt:$MODEL_DIR/length_mismatch_result.txt:$MODEL_DIR/spelling_result.txt
---cuda-device=0
---include-package=my_package)
+# echo "naik"
+# NAIK_PARAMS=($MODEL_DIR/model.tar.gz  
+# /ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Antonym/multinli_0.9_antonym_mismatched.jsonl:/ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Numerical_Reasoning/multinli_0.9_quant_hard.jsonl:/ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Word_Overlap/multinli_0.9_taut2_mismatched.jsonl:/ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Negation/multinli_0.9_negation_mismatched.jsonl:/ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Length_Mismatch/multinli_0.9_length_mismatch_mismatched.jsonl:/ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Spelling_Error/multinli_0.9_dev_gram_all_mismatched.jsonl
+# --output-file=$MODEL_DIR/antonym_result.txt:$MODEL_DIR/numerical_reasoning_result.txt:$MODEL_DIR/word_overlap_result.txt:$MODEL_DIR/negation_result.txt:$MODEL_DIR/length_mismatch_result.txt:$MODEL_DIR/spelling_result.txt
+# --cuda-device=0
+# --include-package=my_package)
 
-allennlp evaluate_mult ${NAIK_PARAMS[@]}
+# allennlp evaluate_mult ${NAIK_PARAMS[@]}
 
 
 

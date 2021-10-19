@@ -58,9 +58,13 @@ class CounterfactualTextualEntailmentPredictor(Predictor):
         """
         Expects JSON that looks like `{"premise": "...", "hypothesis": "..."}`.
         """
-        premise_text = json_dict["premise"]
-        hypothesis_text = json_dict["hypothesis"]
-        if json_dict["sample_weight"]:
+        if 'premise' in json_dict.keys():
+            premise_text = json_dict["premise"]
+            hypothesis_text = json_dict["hypothesis"]
+        else:
+            premise_text = json_dict["sentence1"]
+            hypothesis_text = json_dict["sentence2"]           
+        if 'sample_weight' in json_dict.keys():
             sample_weight = json_dict["sample_weight"]
             return self._dataset_reader.text_to_instance(
                 premise_text, hypothesis_text, sample_weight=sample_weight
@@ -126,7 +130,7 @@ class CounterfactualTextualEntailmentPredictor(Predictor):
             # outputs[i]['logits'] = outputs[i]['logits'] -  (factual_entropy  * cf_weight * cf_outputs[i]['logits'])
             # outputs[i]['logits'] = outputs[i]['logits'] -  cf_weight * cf_outputs[i]['logits']
             outputs[i]["probs"] = softmax(outputs[i]["logits"]) - (
-                (factual_entropy) * cf_weight * softmax(cf_outputs[i]["logits"])
+                (factual_entropy**6.496285088207996) * cf_weight * softmax(cf_outputs[i]["logits"])
             )
             outputs[i]["label"] = label_dict[np.argmax(outputs[i]["probs"]).item()]
         return sanitize(outputs)
