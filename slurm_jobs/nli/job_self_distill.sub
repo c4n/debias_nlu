@@ -23,14 +23,14 @@ source ~/CI_env/bin/activate
 # Train Model
 
 # Predict
-allennlp predict  $MODEL_DIR/model.tar.gz  data/nli/multinli_1.0_train_small.jsonl --output-file raw_train_result.jsonl --batch-size 64 --cuda-device 0 --predictor textual_entailment 
+# allennlp predict  $MODEL_DIR/model.tar.gz  data/nli/multinli_1.0_train_small.jsonl --output-file $MODEL_DIR/raw_train_result.jsonl --batch-size 64 --cuda-device 0 --predictor textual_entailment 
 # allennlp cf_predict $MODEL_DIR/model.tar.gz data/nli/heuristics_evaluation_set.jsonl  --output-file test_cf_hans_overlap.jsonl --batch-size 64  --cf_type counterfactual_snli --cf_weight  2.1472015953718535  --predictor cf_textual_entailment --cuda-device 0 --include-package my_package # standard eval
 echo $MODEL_DIR
 
-# eval counterfactual
-
-# hans
-# allennlp cf_predict_scale $MODEL_DIR/model.tar.gz data/nli/heuristics_evaluation_set.jsonl $MODEL_DIR/temperature.pt --output-file $MODEL_DIR/cf_hans_result_mask_vxt214.jsonl --batch-size 64 --cuda-device 0 --cf_type counterfactual_snli --cf_weight  2.1472015953718535 --predictor cf_textual_entailment_entropy_scale --include-package my_package
-# cd utils/
-# python hans_parser.py -i $MODEL_DIR/cf_hans_result_mask_vxt214.jsonl -o $MODEL_DIR/cf_hans_mask_vxt214.out
-# python evaluate_heur_output.py $MODEL_DIR/cf_hans_mask_vxt214.out > $MODEL_DIR/cf_hans_results_mask_vxt214.txt
+max=2
+for i in `seq 1 $max`
+do
+    # Distill
+    
+    python create_distill_train_set.py -t data/nli/multinli_1.0_train_small.jsonl -p $MODEL_DIR/raw_train_result.jsonl -o  $MODEL_DIR/distill_${i}output.jsonl
+done
