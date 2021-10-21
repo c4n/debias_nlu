@@ -23,14 +23,14 @@ source ~/CI_env/bin/activate
 # Train Model
 
 # Predict
-# allennlp predict  $MODEL_DIR/model.tar.gz  data/nli/multinli_1.0_train_small.jsonl --output-file $MODEL_DIR/raw_train_result.jsonl --batch-size 64 --cuda-device 0 --predictor textual_entailment 
+allennlp predict  $MODEL_DIR/model.tar.gz  data/nli/multinli_1.0_train_small.jsonl --output-file $MODEL_DIR/raw_train_result_0.jsonl --batch-size 64 --cuda-device 0 --predictor textual_entailment 
 # allennlp cf_predict $MODEL_DIR/model.tar.gz data/nli/heuristics_evaluation_set.jsonl  --output-file test_cf_hans_overlap.jsonl --batch-size 64  --cf_type counterfactual_snli --cf_weight  2.1472015953718535  --predictor cf_textual_entailment --cuda-device 0 --include-package my_package # standard eval
 echo $MODEL_DIR
 
 max=2
-for i in `seq 1 $max`
+for i in `seq 0 $max`
 do
     # Distill
+    python utils/create_distill_train_set.py -t data/nli/multinli_1.0_train_small.jsonl -p $MODEL_DIR/raw_train_result_${i}.jsonl -o  $MODEL_DIR/distill_output_${i}.jsonl
     
-    python create_distill_train_set.py -t data/nli/multinli_1.0_train_small.jsonl -p $MODEL_DIR/raw_train_result.jsonl -o  $MODEL_DIR/distill_${i}output.jsonl
 done
