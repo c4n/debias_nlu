@@ -1,12 +1,12 @@
 #!/bin/bash -l
 #SBATCH --error=/ist/users/canu/slurm_log/task.out.%j  # STDOUT output is written in slurm.out.JOBID
 #SBATCH --output=/ist/users/canu/slurm_log/task.out.%j # STDOUT error is written in slurm.err.JOBID
-#SBATCH --job-name=eval       # Job name
-#SBATCH --mem=16GB                  # Memory request for this job
+#SBATCH --job-name=distill       # Job name
+#SBATCH --mem=64GB                  # Memory request for this job
 #SBATCH --nodes=1                   # The number of nodes
 #SBATCH --partition=gpu-cluster
 #SBATCH --account=scads
-#SBATCH --time=2:0:0                # Runing time 2 hours
+#SBATCH --time=24:0:0                # Runing time 2 hours
 #SBATCH --gpus=1                    # A number of GPUs  
 
 # module load Anaconda3
@@ -23,7 +23,7 @@ source ~/CI_env/bin/activate
 # Train Model
 
 # Predict
-allennlp predict  $MODEL_DIR/model.tar.gz  data/nli/multinli_1.0_train_small.jsonl --output-file $MODEL_DIR/raw_train_result_0.jsonl --batch-size 64 --cuda-device 0 --predictor textual_entailment 
+allennlp predict  $MODEL_DIR/model.tar.gz  data/nli/multinli_1.0_train.jsonl --output-file $MODEL_DIR/raw_train_result_0.jsonl --batch-size 64 --cuda-device 0 --predictor textual_entailment  --silent 
 # allennlp cf_predict $MODEL_DIR/model.tar.gz data/nli/heuristics_evaluation_set.jsonl  --output-file test_cf_hans_overlap.jsonl --batch-size 64  --cf_type counterfactual_snli --cf_weight  2.1472015953718535  --predictor cf_textual_entailment --cuda-device 0 --include-package my_package # standard eval
 echo $MODEL_DIR
 
@@ -32,9 +32,10 @@ for i in `seq 0 $max`
 do
     # Distill
     ## Generate Training Set with Soft Target
-    python utils/create_distill_train_set.py -t data/nli/multinli_1.0_train_small.jsonl -p $MODEL_DIR/raw_train_result_${i}.jsonl -o  $MODEL_DIR/distill_output_${i}.jsonl
+    python utils/create_distill_train_set.py -t data/nli/multinli_1.0_train.jsonl -p $MODEL_DIR/raw_train_result_${i}.jsonl -o  $MODEL_DIR/distill_output_${i}.jsonl 
     ## Train a distilled model
-    allennlp train configs/nli/knowledge_distill/mnli_bert_base_distill_clark_1.jsonnet -s $MODEL_DIR/distill_model_${i} --include-package my_package --overrides {"train_data_path": $MODEL_DIR/distill_output_${i}.jsonl}
+    allennlp train configs/nli/knowledge_distill/mnli_bert_base_distill_clark_1.jsonnet -s $MODEL_DIR/distill_model_${i} --include-package my_package --overrides '{"train_data_path": "'"$MODEL_DIR/distill_output_${i}.jsonl"'",}'
     ## Predict
-    allennlp predict  $MODEL_DIR/model.tar.gz  data/nli/multinli_1.0_train_small.jsonl --output-file $MODEL_DIR/raw_train_result_${i}.jsonl --batch-size 64 --cuda-device 0 --predictor textual_entailment 
+    next_distill=$((i+1))
+    allennlp predict   $MODEL_DIR/distill_model_${i}  data/nli/multinli_1.0_train.jsonl --output-file $MODEL_DIR/raw_train_result_${next_distill}.jsonl --batch-size 64 --cuda-device 0 --predictor textual_entailment --silent  
 done
