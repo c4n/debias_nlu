@@ -10,13 +10,14 @@ from allennlp.models.model import Model
 from allennlp.modules import FeedForward, Seq2SeqEncoder, Seq2VecEncoder, TextFieldEmbedder
 from allennlp.nn import InitializerApplicator, util
 from allennlp.nn.util import get_text_field_mask
-from allennlp.training.metrics import CategoricalAccuracy
+from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 
 
 from torch.autograd import Function
 
 from torch.nn import Module
 from torch import tensor
+
 
 class GradientReversalFunction(Function):
     """
@@ -49,7 +50,6 @@ class GradientReversal(torch.nn.Module):
         return GradientReversalFunction.apply(x, self.lambda_)
 
 
-            
 @Model.register("sample_weight_basic_classifier")
 class SampleWeightBasicClassifier(BasicClassifier):
     def __init__(
@@ -67,7 +67,8 @@ class SampleWeightBasicClassifier(BasicClassifier):
         **kwargs,
     ) -> None:
 
-        super().__init__(vocab, text_field_embedder=text_field_embedder, seq2vec_encoder=seq2vec_encoder, **kwargs)
+        super().__init__(vocab, text_field_embedder=text_field_embedder,
+                         seq2vec_encoder=seq2vec_encoder, **kwargs)
         # self._text_field_embedder = text_field_embedder
         self._seq2seq_encoder = seq2seq_encoder
         # self._seq2vec_encoder = seq2vec_encoder
@@ -87,15 +88,19 @@ class SampleWeightBasicClassifier(BasicClassifier):
         if num_labels:
             self._num_labels = num_labels
         else:
-            self._num_labels = vocab.get_vocab_size(namespace=self._label_namespace)
-        
-        #Output layer
-        self._classification_layer = torch.nn.Linear(self._classifier_input_dim, self._num_labels)
+            self._num_labels = vocab.get_vocab_size(
+                namespace=self._label_namespace)
+
+        # Output layer
+        self._classification_layer = torch.nn.Linear(
+            self._classifier_input_dim, self._num_labels)
         self._accuracy = CategoricalAccuracy()
+        self._f1_metrics = [F1Measure(positive_label=i)
+                            for i in range(self._num_labels)]
+
         self._loss = torch.nn.CrossEntropyLoss(reduction='none')
-        initializer(self)    
-        
-        
+        initializer(self)
+
     def forward(  # type: ignore
         self, tokens: TextFieldTensors, label: torch.IntTensor = None, sample_weight: torch.FloatTensor = None
     ) -> Dict[str, torch.Tensor]:
@@ -113,18 +118,29 @@ class SampleWeightBasicClassifier(BasicClassifier):
 
         if self._feedforward is not None:
             embedded_text = self._feedforward(embedded_text)
-        
+
         logits = self._classification_layer(embedded_text)
         probs = torch.nn.functional.softmax(logits, dim=-1)
 
         output_dict = {"logits": logits, "probs": probs}
-        output_dict["token_ids"] = util.get_token_ids_from_text_field_tensors(tokens)
+        output_dict["token_ids"] = util.get_token_ids_from_text_field_tensors(
+            tokens)
         if label is not None:
             loss = self._loss(logits, label.long().view(-1))
             if sample_weight is not None:
                 loss = loss * sample_weight
             output_dict["loss"] = loss.mean()
             self._accuracy(logits, label)
+            for label_i in range(self._num_labels):
+                self._f1_metrics[label_i](probs, label)
 
         return output_dict
 
+    def get_metrics(self, reset: bool = False) -> Dict[str, float]:
+        metrics = {
+            "accuracy": self._accuracy.get_metric(reset),
+        }
+        for label_i, label_str in self.vocab.get_index_to_token_vocabulary(namespace=self._label_namespace).items():
+            for metric, value in self._f1_metrics[label_i].get_metric(reset).items():
+                metrics["%s_%s" % (label_str, metric)] = value
+        return metrics
