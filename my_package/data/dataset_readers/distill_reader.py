@@ -106,10 +106,11 @@ class DistillSnliReader(DatasetReader):
                 )
             for example in self.shard_iterable(filtered_example_iter):
                 distill_probs = example.get("distill_probs")
+                sample_weight = example.get("sample_weight")
                 label = example.get("gold_label")
                 premise = example["sentence1"]
                 hypothesis = example["sentence2"]
-                yield self.text_to_instance(premise, hypothesis, label, distill_probs)
+                yield self.text_to_instance(premise, hypothesis, label, distill_probs,sample_weight)
 
     @overrides
     def text_to_instance(
@@ -118,6 +119,7 @@ class DistillSnliReader(DatasetReader):
         hypothesis: str,
         label: str = None,
         distill_probs: float = None,
+        sample_weight: float = None,       
     ) -> Instance:
 
         fields: Dict[str, Field] = {}
@@ -145,6 +147,9 @@ class DistillSnliReader(DatasetReader):
 
         if distill_probs is not None:
             fields["distill_probs"] = ArrayField(np.array(distill_probs,dtype='float32'))
+
+        if sample_weight is not None:
+            fields["sample_weight"] = FloatField(sample_weight)
 
         return Instance(fields)
 

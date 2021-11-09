@@ -65,7 +65,7 @@ class ModelWithTemperature(nn.Module):
         with torch.no_grad():
             self.model
             for input in valid_loader:
-                input = input.cuda()
+                input = input
                 label = input["label"].cuda()
                 output_dict = self.model(tokens=input["tokens"], label=label)
                 logits = output_dict["logits"]
@@ -181,8 +181,9 @@ def get_temp(
     check_for_gpu(cuda_device)
     data_loader.set_target_device(int_to_device(cuda_device))
     model_temp = ModelWithTemperature(model)
-    model_temp.set_temperature(validation_dataset_loader)
-    pickle.dump(model_temp, open(output_file, "wb"))
+    model_temp.set_temperature(data_loader)
+    # pickle.dump(model_temp, open(output_file, "wb"))
+    torch.save(model_temp,output_file)
     return model_temp
 
 

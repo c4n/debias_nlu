@@ -74,15 +74,15 @@ class CounterfactualTextualEntailmentPredictor(Predictor):
 
     @overrides
     def predict_batch_json(
-        self, inputs: List[JsonDict], cf_weight: float, temperature : nn.Parameter
+        self, inputs: List[JsonDict], cf_weight: float, entropy_curve: float, temperature : nn.Parameter
     ) -> List[JsonDict]:
         instances = self._batch_json_to_instances(inputs)
-        return self.predict_batch_instance(instances, cf_weight, temperature)
+        return self.predict_batch_instance(instances, cf_weight, entropy_curve, temperature)
 
     @overrides
-    def predict_json(self, inputs: JsonDict, cf_weight: float, temperature : nn.Parameter) -> JsonDict:
+    def predict_json(self, inputs: JsonDict, cf_weight: float, entropy_curve: float, temperature : nn.Parameter) -> JsonDict:
         instance = self._json_to_instance(inputs)
-        return self.predict_instance(instance, cf_weight, temperature)
+        return self.predict_instance(instance, cf_weight, entropy_curve,temperature)
 
     @overrides
     def predictions_to_labeled_instances(
@@ -95,7 +95,7 @@ class CounterfactualTextualEntailmentPredictor(Predictor):
         return [new_instance]
 
     @overrides
-    def predict_instance(self, instance: Instance, cf_weight: float) -> JsonDict:
+    def predict_instance(self, instance: Instance, cf_weight: float,  entropy_curve: float, temperature : nn.Parameter) -> JsonDict:
         self._dataset_reader.apply_token_indexers(instance)
         cf_instance = deepcopy(instance)
         cf_instance.fields["tokens"] = cf_instance.fields.pop("cf_tokens")
@@ -105,7 +105,7 @@ class CounterfactualTextualEntailmentPredictor(Predictor):
 
     @overrides
     def predict_batch_instance(
-        self, instances: List[Instance], cf_weight: float,  temperature : nn.Parameter
+        self, instances: List[Instance], cf_weight: float, entropy_curve: float,  temperature : nn.Parameter
     ) -> List[JsonDict]:
         cf_instances = []
         label_dict = {0: "entailment", 1: "contradiction", 2: "neutral"}

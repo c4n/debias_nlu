@@ -176,6 +176,13 @@ class Predict(Subcommand):
             help="counterfactual type",
         )
 
+        subparser.add_argument(
+            "--entropy_curve",
+            type=float,
+            default=0.0,
+            help="exponent for entropy",
+        )
+
         subparser.set_defaults(func=_cfpredict)
 
         return subparser
@@ -246,13 +253,14 @@ class _CFPredictManager:
         print_to_console: bool,
         has_dataset_reader: bool,
         multitask_head: Optional[str] = None,
-        cf_weight: float = 0.5,
+        cf_weight: float = 0.0,
+        entropy_curve: float = 0.0,
     ) -> None:
         self._predictor = predictor
         self._input_file = input_file
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self._temperature = torch.load(temperature_file,map_location=device)
-        self._temperature = self._temperature.to('cpu') # move to cpu
+        self._temperature = self._temperature.temperature.to('cpu') # move to cpu
         self._temperature  = self._temperature.detach()
         self._output_file = None if output_file is None else open(output_file, "w")
         self._batch_size = batch_size
@@ -261,6 +269,7 @@ class _CFPredictManager:
             None if not has_dataset_reader else predictor._dataset_reader
         )
         self._cf_weight = cf_weight
+        self._entropy_curve = entropy_curve
 
         self._multitask_head = multitask_head
         if self._multitask_head is not None:
@@ -281,20 +290,20 @@ class _CFPredictManager:
             )
 
     def _predict_json(
-        self, batch_data: List[JsonDict], cf_weight: float, temperature : nn.Parameter
+        self, batch_data: List[JsonDict], cf_weight: float, entropy_curve: float, temperature : nn.Parameter
     ) -> Iterator[str]:
         if len(batch_data) == 1:
-            results = [self._predictor.predict_json(batch_data[0], cf_weight, self._temperature)]
+            results = [self._predictor.predict_json(batch_data[0], cf_weight, entropy_curve, self._temperature)]
         else:
-            results = self._predictor.predict_batch_json(batch_data, cf_weight, self._temperature)
+            results = self._predictor.predict_batch_json(batch_data, cf_weight, entropy_curve, self._temperature)
         for output in results:
             yield self._predictor.dump_line(output)
 
-    def _predict_instances(self, batch_data: List[Instance], cf_weight: float, temperature : nn.Parameter) -> Iterator[str]:
+    def _predict_instances(self, batch_data: List[Instance], cf_weight: float, entropy_curve: float, temperature : nn.Parameter) -> Iterator[str]:
         if len(batch_data) == 1:
-            results = [self._predictor.predict_instance(batch_data[0], cf_weight, self._temperature)]
+            results = [self._predictor.predict_instance(batch_data[0], cf_weight, entropy_curve, self._temperature)]
         else:
-            results = self._predictor.predict_batch_instance(batch_data, cf_weight, self._temperature)
+            results = self._predictor.predict_batch_instance(batch_data, cf_weight,entropy_curve, self._temperature)
         for output in results:
             yield self._predictor.dump_line(output)
 
@@ -355,7 +364,7 @@ class _CFPredictManager:
         else:
             for batch_json in lazy_groups_of(self._get_json_data(), self._batch_size):
                 for model_input_json, result in zip(
-                    batch_json, self._predict_json(batch_json, self._cf_weight, self._temperature)
+                    batch_json, self._predict_json(batch_json, self._cf_weight, self._entropy_curve, self._temperature)
                 ):
 
                     self._maybe_print_to_console_and_file(
@@ -387,5 +396,6 @@ def _cfpredict(args: argparse.Namespace) -> None:
         args.use_dataset_reader,
         args.multitask_head,
         args.cf_weight,
+        args.entropy_curve,
     )
     manager.run()

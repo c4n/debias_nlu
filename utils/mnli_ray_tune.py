@@ -24,28 +24,26 @@ def counterfactual_function(config):
     for line, line_gt in zip(f1,f2):
 
         logit, logit_cf= line['logits'], line['cf_logits']
-        gt, sample_weight = line_gt['gold_label'], line_gt['sample_weight']
+        gt, overlap = line_gt['gold_label'], line_gt['overlap_score']
             
             
-        # entropy switch
         x=softmax(logit)
         entropy = -sum(x*np.log(x)/np.log(3))
-#   * 0.2
+
         # end switch    
         out_logit = np.array(logit)-((entropy**entropy_curve)*cf_weight*np.array(logit_cf))
         if gt == "-":
             continue
-#             out_logit = np.array(logit)- cf_weight*np.array(logit_cf)
-        if sample_weight >= 0.81 and mnli_target_dict[gt] == 0:
-#                 e += 1
-            if np.argmax(softmax(out_logit)) == gt:
-                e_correct += 1 
-            e_sample +=1  
-        elif sample_weight >= 0.75 and mnli_target_dict[gt] != 0:
-#                 ne += 1
+
+        if  overlap >= 0.81  and mnli_target_dict[gt] == 0:
+            if np.argmax(softmax(out_logit)) == mnli_target_dict[gt]:
+                e_correct += 1 * 0.33
+            e_sample +=1  * 0.33
+        elif overlap >= 0.75 and mnli_target_dict[gt] != 0:
             if np.argmax(softmax(out_logit)) != 0:
                 ne_correct += 1 
             ne_sample +=1   
+
 
     total_score = ((ne_correct+e_correct)/(ne_sample+e_sample))   
  
@@ -82,11 +80,11 @@ def main(argv):
     f2 = []
     f2_temp = [gt for gt in f2_temp.iter()]
     for gt in f2_temp:
-        f2.append({'gold_label':gt['gold_label'],'sample_weight':gt['sample_weight'] })
+        f2.append({'gold_label':gt['gold_label'],'overlap_score':gt['overlap_score'] })
 
 
-    config = {"cf_weight": tune.uniform(0, 8),
-                "entropy_curve": tune.uniform(0, 8)}
+    config = {"cf_weight": tune.uniform(0, 10),
+                "entropy_curve": tune.uniform(0, 10)}
 
     analysis = tune.run(counterfactual_function,
             config=config, 

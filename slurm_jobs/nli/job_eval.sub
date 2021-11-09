@@ -14,7 +14,7 @@
  module load cuDNN/7
  module load HDF5
 
-MODEL_DIR="outputs_ps_bert_base_v2"
+MODEL_DIR="/ist/ist-share/scads/can/outputs_ps_bert_base_clark_v2/"
 echo $MODEL_DIR
 cd ~/CI4RRL_project
 source ~/CI_env/bin/activate
