@@ -1,1 +1,1 @@
-from my_package.models import counterfactual_weight_classifier, gradient_reverse_classifiers, kl_loss_classifier, sample_weight_classifier, utama_weight_classifier, distill_classifier
+from my_package.models import counterfactual_weight_classifier, gradient_reverse_classifiers, kl_loss_classifier, sample_weight_classifier, utama_weight_classifier, distill_classifier, weighted_distill_classifier

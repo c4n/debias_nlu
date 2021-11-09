@@ -106,4 +106,3 @@ class WeightedDistillBasicClassifier(BasicClassifier):
             self._accuracy(logits, label)
 
         return output_dict
-

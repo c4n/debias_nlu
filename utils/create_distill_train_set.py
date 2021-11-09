@@ -27,7 +27,7 @@ def main(argv):
     with jsonlines.open(train_path) as f1,jsonlines.open(pred_path) as f2:
         for line, line_pred in zip(f1.iter(),f2.iter()):
             line['logits'] = line_pred['logits']
-            line['probs'] = line_pred['probs']
+            line['distill_probs'] = line_pred['probs']
             out.append(line)
 
 

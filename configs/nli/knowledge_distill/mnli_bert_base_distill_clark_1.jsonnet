@@ -17,11 +17,11 @@ local transformer_dim = 768;
       }
     }
   },
-  "train_data_path": "/ist/users/canu/debias_nlu/data/nli/multinli_1.0_train_roberta_weighted_v2_for_distll_exp.jsonl",
+  "train_data_path": "/ist/users/canu/debias_nlu/data/nli/multinli_1.0_train.jsonl",
   "validation_data_path": "/ist/users/canu/debias_nlu/data/nli/multinli_1.0_dev_matched.jsonl",
   "test_data_path": "/ist/users/canu/debias_nlu/data/nli/multinli_1.0_dev_mismatched.jsonl",
   "model": {
-    "type": "distill_basic_classifier",
+    "type": "weighted_distill_basic_classifier",
     "text_field_embedder": {
       "token_embedders": {
         "tokens": {

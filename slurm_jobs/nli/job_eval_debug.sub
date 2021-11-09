@@ -33,7 +33,7 @@ source ~/CI_env/bin/activate
 # echo $MODEL_DIR 
 # ON DEV SET!!!
 # allennlp predict  $MODEL_DIR/model.tar.gz  data/nli/heuristics_evaluation_set.jsonl --output-file test_han_result.jsonl --batch-size 64 --cuda-device 0 --predictor textual_entailment 
-allennlp cf_predict $MODEL_DIR/model.tar.gz data/nli/heuristics_evaluation_set.jsonl  --output-file test_cf_hans_overlap.jsonl --batch-size 64  --cf_type counterfactual_snli --cf_weight  2.1472015953718535  --predictor cf_textual_entailment --cuda-device 0 --include-package my_package # standard eval
+allennlp cf_predict_scale $MODEL_DIR/model.tar.gz data/nli/multinli_1.0_dev_matched_weighted.jsonl $MODEL_DIR/temperature.pt --output-file test_dev.jsonl --batch-size 64  --cf_type counterfactual_snli --cf_weight  0.0  --predictor dev_scale --cuda-device 0 --include-package my_package # standard eval
 echo $MODEL_DIR
 
 # eval counterfactual

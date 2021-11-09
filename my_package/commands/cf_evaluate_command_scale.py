@@ -83,6 +83,7 @@ def temperature_scale(temperature, logits):
 def cf_evaluate(
     model: Model,
     data_loader: DataLoader,
+    entropy_curve: float,
     cf_weight: float,
     pickled_temperature_path: str,
     cf_method: str = "mult",
@@ -117,7 +118,11 @@ def cf_evaluate(
     predictions_file = (
         None if predictions_output_file is None else open(predictions_output_file, "w")
     )
-    temperature = pickle.load( open( pickled_temperature_path, "rb" ) )
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    temperature = torch.load(pickled_temperature_path,map_location=device)
+    temperature = temperature.temperature.to(device)
+    temperature = temperature.detach()
+    # temperature = pickle.load( open( pickled_temperature_path, "rb" ) )
     with torch.no_grad():
         model.eval()
         iterator = iter(data_loader)
@@ -161,16 +166,21 @@ def cf_evaluate(
                 factual_softmax = torch.nn.functional.softmax(
                     output_dict["logits"], dim=-1
                 )
-                cf_softmax = torch.nn.functional.softmax(
-                    output_dict_cf["logits"], dim=-1
-                )
+                # cf_softmax = torch.nn.functional.softmax(
+                #     output_dict_cf["logits"], dim=-1
+                # )
                 factual_entropy = -torch.sum(
                     factual_softmax * torch.log(factual_softmax) / torch.log(n_class),
                     dim=1,
                 )
-                output_dict["probs"] = factual_softmax - (
-                    factual_entropy.unsqueeze(1) * cf_weight * cf_softmax
+                factual_entropy=factual_entropy.unsqueeze(1)
+                output_dict['logits'] = output_dict['logits'] -  ((factual_entropy**entropy_curve)  * cf_weight * output_dict_cf['logits'])
+                output_dict["probs"] = torch.nn.functional.softmax(
+                    output_dict["logits"], dim=-1
                 )
+                # output_dict["probs"] = factual_softmax - (
+                #     factual_entropy.unsqueeze(1) * cf_weight * cf_softmax
+                # )
             elif cf_method == "add":
                 sample_weight = batch["sample_weight"].view(
                     batch["sample_weight"].shape[0], 1
@@ -358,9 +368,16 @@ class Evaluate(Subcommand):
         subparser.add_argument(
             "--cf_weight",
             type=float,
-            default=0.5,
+            default=1.0,
             help="weight for counterfactual component",
         )
+
+        subparser.add_argument(
+            "--entropy_curve",
+            type=float,
+            default=0.0,
+            help="exponent component for the entropy",
+        )        
 
         subparser.add_argument(
             "--cf_method", type=str, default="mult", help="counterfactual type"
@@ -469,6 +486,7 @@ def evaluate_from_args(args: argparse.Namespace) -> Dict[str, Any]:
         metrics = cf_evaluate(
             model,
             data_loader,
+            args.entropy_curve,
             args.cf_weight,
             args.temperature_file,
             args.cf_method,

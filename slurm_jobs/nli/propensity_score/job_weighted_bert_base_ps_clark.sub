@@ -17,7 +17,7 @@
 TRANSFORMERS_OFFLINE=1
 HF_DATASETS_OFFLINE=1
 
-cd ~/CI4RRL_project
+cd ~/debias_nlu
 source ~/CI_env/bin/activate
 allennlp train spurious_corr/MNLI/training_config/mnli_bert_base_clark_1_ps_gam2.jsonnet -s outputs_ps_bert_base_clark_v2/ --include-package my_package
 #allennlp train spurious_corr/MNLI/training_config/mnli_bert_base_test.jsonnet -s outputs_bert_test/ --include-package my_package

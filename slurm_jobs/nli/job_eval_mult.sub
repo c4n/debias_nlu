@@ -14,22 +14,21 @@
  module load cuDNN/7
  module load HDF5
 
-MODEL_DIR="/ist/ist-share/scads/can/outputs_distill_bert_base_clark_1_testrun"
-CF_WEIGHT="/ist/ist-share/scads/can/outputs_distill_bert_base_clark_1_testrun"
+MODEL_DIR="/ist/ist-share/scads/can/outputs_ps_bert_base_clark_v2/distill_model4_0"
 # mnli + mnli/snli hard + kaushik 
 echo $MODEL_DIR
 cd ~/debias_nlu
 source ~/CI_env/bin/activate
-# MNLI_PARAMS=($MODEL_DIR/model.tar.gz  
-# /ist/users/canu/debias_nlu/data/nli/multinli_1.0_dev_mismatched.jsonl:/ist/users/canu/debias_nlu/data/nli/snli_1.0_test_hard.jsonl:/ist/users/canu/debias_nlu/data/nli/dev_mismatched_hard.jsonl:/ist/users/canu/debias_nlu/data/nli/test_kaushik_RP.jsonl:/ist/users/canu/debias_nlu/data/nli/test_kaushik_RH.jsonl:/ist/users/canu/debias_nlu/data/nli/test_kaushik_combined.jsonl
-# --output-file=$MODEL_DIR/result.txt:$MODEL_DIR/snli_hard_result.txt:$MODEL_DIR/mnli_hard_dev_mm_result.txt:$MODEL_DIR/kaushik_rp_result.txt:$MODEL_DIR/kaushik_rh_result.txt:$MODEL_DIR/kaushik_combined_result.txt
-# --cuda-device=0
-# --include-package=my_package)
-# allennlp evaluate_mult ${MNLI_PARAMS[@]} # standard eval
-# echo $MODEL_DIR
+MNLI_PARAMS=($MODEL_DIR/model.tar.gz  
+/ist/users/canu/debias_nlu/data/nli/multinli_1.0_dev_mismatched.jsonl:/ist/users/canu/debias_nlu/data/nli/snli_1.0_test_hard.jsonl:/ist/users/canu/debias_nlu/data/nli/dev_mismatched_hard.jsonl:/ist/users/canu/debias_nlu/data/nli/test_kaushik_RP.jsonl:/ist/users/canu/debias_nlu/data/nli/test_kaushik_RH.jsonl:/ist/users/canu/debias_nlu/data/nli/test_kaushik_combined.jsonl
+--output-file=$MODEL_DIR/result.txt:$MODEL_DIR/snli_hard_result.txt:$MODEL_DIR/mnli_hard_dev_mm_result.txt:$MODEL_DIR/kaushik_rp_result.txt:$MODEL_DIR/kaushik_rh_result.txt:$MODEL_DIR/kaushik_combined_result.txt
+--cuda-device=0
+--include-package=my_package)
+allennlp evaluate_mult ${MNLI_PARAMS[@]} # standard eval
+echo $MODEL_DIR
 
 # # hans
-# allennlp predict $MODEL_DIR/model.tar.gz /ist/users/canu/debias_nlu/data/nli/heuristics_evaluation_set.jsonl --output-file $MODEL_DIR/hans_result.jsonl --batch-size 16 --cuda-device 0 --predictor textual_entailment --include-package my_package
+allennlp predict $MODEL_DIR/model.tar.gz /ist/users/canu/debias_nlu/data/nli/heuristics_evaluation_set.jsonl --output-file $MODEL_DIR/hans_result.jsonl --batch-size 16 --cuda-device 0 --predictor textual_entailment --include-package my_package
 
 cd utils/
 python hans_parser.py -i $MODEL_DIR/hans_result.jsonl -o $MODEL_DIR/hans.out
