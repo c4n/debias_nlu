@@ -1,5 +1,5 @@
 
-#This example, show fine-tune BERT base on mnli use allennlp 
+#This example, show fine-tune BERT base on fact_verification use allennlp 
 
 export CUDA_VISIBLE_DEVICES=7
 allennlp train configs/fact_verification/fever_bert_base_1.jsonnet \
