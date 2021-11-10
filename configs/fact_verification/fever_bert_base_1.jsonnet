@@ -19,7 +19,6 @@ local transformer_dim = 768;
   },
   "train_data_path": "data/fact_verification/fever.train.jsonl",
   "validation_data_path": "data/fact_verification/fever.dev.jsonl",
-  "test_data_path": "data/fact_verification/fever_symmetric_generated.jsonl",
   "model": {
     "type": "basic_classifier",
     "text_field_embedder": {
