@@ -2,9 +2,9 @@
 #This example, show fine-tune BERT base on paraphrase_identification use allennlp 
 
 export CUDA_VISIBLE_DEVICES=5
-# allennlp train configs/paraphrase_identification/qqp_bert_base_1.jsonnet \
-# -s output_models/bert_base_qqp \
-# --include-package my_package
+allennlp train configs/paraphrase_identification/qqp_bert_base_1.jsonnet \
+-s output_models/bert_base_qqp \
+--include-package my_package
 
 # This example, show evaluation BERT base on paraphrase_identification
 allennlp evaluate output_models/bert_base_qqp/model.tar.gz \
