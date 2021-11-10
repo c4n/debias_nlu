@@ -26,6 +26,11 @@ source ~/envNLI/bin/activate
 python3 -c "import torch; print('# Visible GPUs: ', torch.cuda.device_count());"
 
 allennlp evaluate $RESULT_DIR/model.tar.gz\
-    data/fact_verification/fever_symmetric_generated.jsonl\
-    --output-file $RESULT_DIR/metrics_test_baseline.json\
+    data/fact_verification/fever_symmetric_v0.1.jsonl\
+    --output-file $RESULT_DIR/metrics_test_v0.1.json\
+    --include-package my_package
+
+allennlp evaluate $RESULT_DIR/model.tar.gz\
+    data/fact_verification/fever_symmetric_v0.2.jsonl\
+    --output-file $RESULT_DIR/metrics_test_v0.2.json\
     --include-package my_package
