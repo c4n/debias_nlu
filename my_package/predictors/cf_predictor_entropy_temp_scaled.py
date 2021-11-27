@@ -98,6 +98,7 @@ class CounterfactualTextualEntailmentPredictor(Predictor):
     def predict_instance(self, instance: Instance, cf_weight: float, entropy_curve: float, temperature : nn.Parameter) -> JsonDict:
         self._dataset_reader.apply_token_indexers(instance)
         cf_instance = deepcopy(instance)
+        instance.fields.pop("sample_weight")
         cf_instance.fields["tokens"] = cf_instance.fields.pop("cf_tokens")
         instance.fields.pop("cf_tokens")
         outputs = self._model.forward_on_instance(instance)
@@ -111,6 +112,7 @@ class CounterfactualTextualEntailmentPredictor(Predictor):
         label_dict = {0: "entailment", 1: "contradiction", 2: "neutral"}
         for instance in instances:
             self._dataset_reader.apply_token_indexers(instance)
+            instance.fields.pop("sample_weight")
             cf_instance = deepcopy(instance)
             cf_instance.fields["tokens"] = cf_instance.fields.pop("cf_tokens")
             instance.fields.pop("cf_tokens")
