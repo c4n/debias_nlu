@@ -14,62 +14,72 @@
  module load cuDNN/7
  module load HDF5
 
-MODEL_DIR="/ist/ist-share/scads/can/outputs_ps_bert_base_clark_v2"
+MODEL_DIR="/ist/ist-share/scads/can/outputs_bert_base_clark_1_seed23370"
+weighted_training_set="data/nli/korn_full_lr_sample_weight.jsonl" #just to make sure that predictions' indices match with the training data
+
 # mnli + mnli/snli hard + kaushik 
 echo $MODEL_DIR
 cd ~/debias_nlu
 source ~/CI_env/bin/activate
 
-# Train Model
 
+
+# Temp Scale
+# ON DEV SET!!!
+echo "step 1: temp scale on dev"
+if [ ! -f $MODEL_DIR/temperature.pt  ]; then
+    allennlp temp_scale $MODEL_DIR/model.tar.gz data/nli/multinli_1.0_dev_matched.jsonl   --output-file $MODEL_DIR/temperature.pt --cuda-device 0 --include-package my_package 
+fi
+
+mkdir -p $MODEL_DIR/counterfactual
+
+echo "step 2: get raw prediction and get best hyperparam"
 # Predict
-# allennlp cf_predict_scale $MODEL_DIR/model.tar.gz data/nli/multinli_1.0_dev_matched_overlap.jsonl $MODEL_DIR/temperature.pt --output-file $MODEL_DIR/pre_raw_dev_result_0.jsonl --batch-size 192  --cf_type counterfactual_snli --cf_weight  0.0  --predictor dev_scale --cuda-device 0 --include-package my_package --silent # standard eval
+# allennlp cf_predict_scale $MODEL_DIR/model.tar.gz data/nli/multinli_1.0_dev_matched_overlap.jsonl $MODEL_DIR/temperature.pt --output-file $MODEL_DIR/counterfactual/pre_raw_dev_result_0.jsonl --batch-size 192  --cf_type counterfactual_snli --cf_weight  0.0  --predictor dev_scale --cuda-device 0 --include-package my_package --silent # standard eval
 # Find optimal cf weight  and get prediction from CF framework
-# python  utils/mnli_ray_tune.py  -m $MODEL_DIR/pre_raw_dev_result_0.jsonl  -o $MODEL_DIR
-# cf_weight=$(<$MODEL_DIR/cf_weight.txt)
-# entropy_curve=$(<$MODEL_DIR/entropy_curve.txt)
-# cf_weight=1.0
-# entropy_curve=0.0
-# allennlp cf_predict_scale $MODEL_DIR/model.tar.gz data/nli/multinli_1.0_train.jsonl $MODEL_DIR/temperature.pt --output-file $MODEL_DIR/raw_train_result_0.jsonl --batch-size 192 --cuda-device 0 --cf_type counterfactual_snli --cf_weight  $cf_weight   --entropy_curve  $entropy_curve  --predictor cf_textual_entailment_distill --include-package my_package --silent
-
+# python  utils/mnli_ray_tune.py  -m $MODEL_DIR/counterfactual/pre_raw_dev_result_0.jsonl  -o $MODEL_DIR/counterfactual
+# cf_weight=$(<$MODEL_DIR/counterfactual/cf_weight.txt)
+# entropy_curve=$(<$MODEL_DIR/counterfactual/entropy_curve.txt)
+cf_weight=1.0
+entropy_curve=1.0
+allennlp cf_predict_scale $MODEL_DIR/model.tar.gz $weighted_training_set $MODEL_DIR/temperature.pt --output-file $MODEL_DIR/counterfactual/raw_train_result_0.jsonl --batch-size 192 --cuda-device 0 --cf_type counterfactual_snli --cf_weight  $cf_weight   --entropy_curve  $entropy_curve  --predictor cf_textual_entailment_distill --include-package my_package --silent
 
 # echo $MODEL_DIR
-
+echo "step 3: distill"
 max=0
 for i in `seq 0 $max`
 do
     # Distill
     ## Generate Training Set with Soft Target
-    # python utils/create_distill_train_set.py -t data/nli/gam_fixed_lr_sample_weight.jsonl -p $MODEL_DIR/raw_train_result_${i}.jsonl -o  $MODEL_DIR/distill_output_${i}.jsonl 
+    python utils/create_distill_train_set.py -t $weighted_training_set -p $MODEL_DIR/counterfactual/raw_train_result_${i}.jsonl -o  $MODEL_DIR/counterfactual/distill_output_${i}.jsonl 
     ## Train a distilled model
-    # allennlp train configs/nli/knowledge_distill/mnli_bert_base_distill_clark_1.jsonnet -s $MODEL_DIR/distill_model4_${i} --include-package my_package --overrides '{"train_data_path": "'"$MODEL_DIR/distill_output_${i}.jsonl"'",}'
+    allennlp train configs/nli/knowledge_distill/mnli_bert_base_distill_clark_1.jsonnet -s $MODEL_DIR/counterfactual/distill_model_${i} --include-package my_package --overrides '{"train_data_path": "'"$MODEL_DIR/counterfactual/distill_output_${i}.jsonl"'",}'
     # Temp Scale
-    # allennlp temp_scale $MODEL_DIR/distill_model4_${i}/model.tar.gz data/nli/multinli_1.0_dev_matched.jsonl   --output-file $MODEL_DIR/distill_model4_${i}/temperature.pt --cuda-device 0 --include-package my_package 
+    allennlp temp_scale $MODEL_DIR/counterfactual/distill_model_${i}/model.tar.gz data/nli/multinli_1.0_dev_matched.jsonl   --output-file $MODEL_DIR/counterfactual/distill_model_${i}/temperature.pt --cuda-device 0 --include-package my_package 
     ## Predict
-    # next_distill=$((i+1))
-    # allennlp cf_predict_scale $MODEL_DIR/distill_model4_${i}/model.tar.gz data/nli/multinli_1.0_dev_matched_overlap.jsonl $MODEL_DIR/distill_model4_${i}/temperature.pt --output-file $MODEL_DIR/distill_model4_${i}/pre_raw_dev_result.jsonl --batch-size 192  --cf_type counterfactual_snli --cf_weight  0.0  --predictor dev_scale --cuda-device 0 --include-package my_package --silent # standard eval
-    # python  utils/mnli_ray_tune.py  -m $MODEL_DIR/distill_model4_${i}/pre_raw_dev_result.jsonl  -o $MODEL_DIR/distill_model4_${i}
-    cf_weight=$(<$MODEL_DIR/distill_model4_${i}/cf_weight.txt)
-    entropy_curve=$(<$MODEL_DIR/distill_model4_${i}/entropy_curve.txt)
-    # mismatch dev set
-    MNLI_PARAMS=($MODEL_DIR/distill_model4_${i}/model.tar.gz  
-    /ist/users/canu/debias_nlu/data/nli/multinli_1.0_dev_mismatched.jsonl:/ist/users/canu/debias_nlu/data/nli/snli_1.0_test_hard.jsonl:/ist/users/canu/debias_nlu/data/nli/dev_mismatched_hard.jsonl:/ist/users/canu/debias_nlu/data/nli/test_kaushik_RP.jsonl:/ist/users/canu/debias_nlu/data/nli/test_kaushik_RH.jsonl:/ist/users/canu/debias_nlu/data/nli/test_kaushik_combined.jsonl
-    $MODEL_DIR/distill_model4_${i}/temperature.pt
-    --output-file=$MODEL_DIR/distill_model4_${i}/cf_result.txt:$MODEL_DIR/distill_model4_${i}/cf_snli_hard_result.txt:$MODEL_DIR/distill_model4_${i}/cf_mnli_hard_dev_mm_result.txt:$MODEL_DIR/distill_model4_${i}/cf_kaushik_rp_result.txt:$MODEL_DIR/distill_model4_${i}/cf_kaushik_rh_result.txt:$MODEL_DIR/distill_model4_${i}/cf_kaushik_combined_result.txt
-    --cuda-device=0
-    --entropy_curve=$entropy_curve
-    --cf_weight=$cf_weight
-    --cf_method=entropy
-    --include-package=my_package)
-    allennlp evaluate_mult_cf_scale ${MNLI_PARAMS[@]} # standard eval
-    
-        # hans
-    allennlp cf_predict_scale $MODEL_DIR/distill_model4_${i}/model.tar.gz data/nli/heuristics_evaluation_set.jsonl $MODEL_DIR/distill_model4_${i}/temperature.pt --output-file $MODEL_DIR/distill_model4_${i}/hans_result_cf.jsonl --batch-size 192 --cuda-device 0 --cf_type counterfactual_snli --cf_weight  $cf_weight   --entropy_curve  $entropy_curve  --predictor cf_textual_entailment_entropy_scale --include-package my_package --silent
-    cd utils/
-    python hans_parser.py -i $MODEL_DIR/distill_model4_${i}/hans_result_cf.jsonl -o $MODEL_DIR/distill_model4_${i}/hans_result_cf.out
-    python evaluate_heur_output.py $MODEL_DIR/distill_model4_${i}/hans_result_cf.out > $MODEL_DIR/distill_model4_${i}/hans_result_cf.txt
-    # allennlp cf_predict_scale $MODEL_DIR/distill_model2_${i} data/nli/multinli_1.0_train.jsonl $MODEL_DIR/distill_model2_${i}/temperature.pt --output-file $MODEL_DIR/raw_train_result_${next_distill}.jsonl --batch-size 192 --predictor cf_textual_entailment_entropy_scale --cuda-device 0 --cf_weight  0.0 --include-package my_package --silent
-    # allennlp cf_predict_scale   $MODEL_DIR/distill_model2_${i}  data/nli/multinli_1.0_train.jsonl --output-file $MODEL_DIR/raw_train_result_${next_distill}.jsonl --batch-size 192 --cuda-device 0 --predictor textual_entailment --silent  
+    next_distill=$((i+1))
+    allennlp cf_predict_scale  $MODEL_DIR/counterfactual/distill_model_${i} $weighted_training_set $MODEL_DIR/counterfactual/distill_model_${i}/temperature.pt --output-file $MODEL_DIR/counterfactual/raw_train_result_${next_distill}.jsonl --batch-size 192 --cuda-device 0 --cf_type counterfactual_snli --cf_weight  $cf_weight   --entropy_curve  $entropy_curve  --predictor cf_textual_entailment_distill --include-package my_package --silent
+
 done
 
 
+
+
+    # # test on mismatch dev set
+    # MNLI_PARAMS=($MODEL_DIR/counterfactual/distill_model_${i}/model.tar.gz  
+    # /ist/users/canu/debias_nlu/data/nli/multinli_1.0_dev_mismatched.jsonl:/ist/users/canu/debias_nlu/data/nli/snli_1.0_test_hard.jsonl:/ist/users/canu/debias_nlu/data/nli/dev_mismatched_hard.jsonl:/ist/users/canu/debias_nlu/data/nli/test_kaushik_RP.jsonl:/ist/users/canu/debias_nlu/data/nli/test_kaushik_RH.jsonl:/ist/users/canu/debias_nlu/data/nli/test_kaushik_combined.jsonl
+    # $MODEL_DIR/counterfactual/distill_model_${i}/temperature.pt
+    # --output-file=$MODEL_DIR/counterfactual/distill_model_${i}/result.txt:$MODEL_DIR/counterfactual/distill_model_${i}/snli_hard_result.txt:$MODEL_DIR/counterfactual/distill_model_${i}/mnli_hard_dev_mm_result.txt:$MODEL_DIR/counterfactual/distill_model_${i}/kaushik_rp_result.txt:$MODEL_DIR/counterfactual/distill_model_${i}/kaushik_rh_result.txt:$MODEL_DIR/counterfactual/distill_model_${i}/kaushik_combined_result.txt
+    # --cuda-device=0
+    # --entropy_curve=$entropy_curve
+    # --cf_weight=$cf_weight
+    # --cf_method=entropy
+    # --include-package=my_package)
+    # allennlp evaluate_mult_cf_scale ${MNLI_PARAMS[@]} # standard eval
+    
+    # # hans
+    # allennlp cf_predict_scale $MODEL_DIR/counterfactual/distill_model_${i}/model.tar.gz data/nli/heuristics_evaluation_set.jsonl $MODEL_DIR/counterfactual/distill_model_${i}/temperature.pt --output-file $MODEL_DIR/counterfactual/distill_model_${i}/hans_result_cf.jsonl --batch-size 192 --cuda-device 0 --cf_type counterfactual_snli --cf_weight  $cf_weight   --entropy_curve  $entropy_curve  --predictor cf_textual_entailment_entropy_scale --include-package my_package --silent
+    # cd utils/
+        # python hans_parser.py -i $MODEL_DIR/counterfactual/distill_model_${i}/hans_result_cf.jsonl -o $MODEL_DIR/counterfactual/distill_model_${i}/hans_result_cf.out
+    # python evaluate_heur_output.py $MODEL_DIR/counterfactual/distill_model_${i}/hans_result_cf.out > $MODEL_DIR/counterfactual/distill_model_${i}/hans_result_cf.txt
+    # cd -

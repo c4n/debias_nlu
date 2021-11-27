@@ -14,18 +14,20 @@
  module load cuDNN/7
  module load HDF5
 
-MODEL_DIR="/ist/ist-share/scads/can/outputs_ps_bert_base_clark_v2"
+MODEL_DIR="/ist/ist-share/scads/can/outputs_bert_base_clark_1_seed33370"
+weighted_training_set="data/nli/korn_full_lr_sample_weight.jsonl" #just to make sure that predictions' indices match with the training data
+
 # mnli + mnli/snli hard + kaushik 
 echo $MODEL_DIR
 cd ~/debias_nlu
 source ~/CI_env/bin/activate
-
+mkdir -p $MODEL_DIR/normal
 # Train Model
-
+#Temp Scale
+allennlp temp_scale $MODEL_DIR/model.tar.gz data/nli/multinli_1.0_dev_matched.jsonl   --output-file $MODEL_DIR/temperature.pt --cuda-device 0 --include-package my_package 
 # Predict
-allennlp cf_predict_scale $MODEL_DIR/model.tar.gz data/nli/multinli_1.0_train.jsonl $MODEL_DIR/temperature.pt --output-file $MODEL_DIR/raw_train_result_0.jsonl --predictor cf_textual_entailment_entropy_scale --batch-size 64 --cuda-device 0 --cf_weight  0.0 --include-package my_package --silent
-# allennlp predict  $MODEL_DIR/model.tar.gz  data/nli/multinli_1.0_train.jsonl --output-file $MODEL_DIR/raw_train_result_0.jsonl --batch-size 64 --cuda-device 0 --predictor textual_entailment  --silent 
-# allennlp cf_predict $MODEL_DIR/model.tar.gz data/nli/heuristics_evaluation_set.jsonl  --output-file test_cf_hans_overlap.jsonl --batch-size 64  --cf_type counterfactual_snli --cf_weight  2.1472015953718535  --predictor cf_textual_entailment --cuda-device 0 --include-package my_package # standard eval
+allennlp cf_predict_scale $MODEL_DIR/model.tar.gz $weighted_training_set $MODEL_DIR/temperature.pt --output-file $MODEL_DIR/normal/raw_train_result_0.jsonl --predictor cf_textual_entailment_distill --batch-size 64 --cuda-device 0 --cf_weight  0.0 --include-package my_package --silent
+
 echo $MODEL_DIR
 
 max=0
@@ -33,13 +35,13 @@ for i in `seq 0 $max`
 do
     # Distill
     ## Generate Training Set with Soft Target
-    python utils/create_distill_train_set.py -t data/nli/gam_fixed_lr_sample_weight.jsonl -p $MODEL_DIR/raw_train_result_${i}.jsonl -o  $MODEL_DIR/distill_output_${i}.jsonl 
+    python utils/create_distill_train_set.py -t $weighted_training_set -p $MODEL_DIR/normal/raw_train_result_${i}.jsonl -o  $MODEL_DIR/normal/distill_output_${i}.jsonl 
     ## Train a distilled model
-    allennlp train configs/nli/knowledge_distill/mnli_bert_base_distill_clark_1.jsonnet -s $MODEL_DIR/distill_model2_${i} --include-package my_package --overrides '{"train_data_path": "'"$MODEL_DIR/distill_output_${i}.jsonl"'",}'
+    allennlp train configs/nli/knowledge_distill/mnli_bert_base_distill_clark_1.jsonnet -s $MODEL_DIR/normal/distill_model_${i} --include-package my_package --overrides '{"train_data_path": "'"$MODEL_DIR/normal/distill_output_${i}.jsonl"'",}'
     # Temp Scale
-    allennlp temp_scale $MODEL_DIR/distill_model2_${i}/model.tar.gz data/nli/multinli_1.0_dev_mismatched_overlap.jsonl   --output-file $MODEL_DIR/distill_model2_${i}/temperature.pt --cuda-device 0 --include-package my_package 
+    allennlp temp_scale $MODEL_DIR/normal/distill_model_${i}/model.tar.gz data/nli/multinli_1.0_dev_matched.jsonl   --output-file $MODEL_DIR/normal/distill_model_${i}/temperature.pt --cuda-device 0 --include-package my_package 
     ## Predict
     next_distill=$((i+1))
-    allennlp cf_predict_scale $MODEL_DIR/distill_model2_${i} data/nli/multinli_1.0_train.jsonl $MODEL_DIR/distill_model2_${i}/temperature.pt --output-file $MODEL_DIR/raw_train_result_${next_distill}.jsonl --batch-size 64 --predictor cf_textual_entailment_entropy_scale --cuda-device 0 --cf_weight  0.0 --include-package my_package --silent
-    # allennlp cf_predict_scale   $MODEL_DIR/distill_model2_${i}  data/nli/multinli_1.0_train.jsonl --output-file $MODEL_DIR/raw_train_result_${next_distill}.jsonl --batch-size 64 --cuda-device 0 --predictor textual_entailment --silent  
+    allennlp cf_predict_scale $MODEL_DIR/normal/distill_model_${i} $weighted_training_set $MODEL_DIR/normal/distill_model_${i}/temperature.pt --output-file $MODEL_DIR/normal/raw_train_result_${next_distill}.jsonl --batch-size 64 --predictor cf_textual_entailment_distill --cuda-device 0 --cf_weight  0.0 --include-package my_package --silent
+    # allennlp cf_predict_scale   $MODEL_DIR/normal/distill_model_${i}  data/nli/multinli_1.0_train.jsonl --output-file $MODEL_DIR/normal/raw_train_result_${next_distill}.jsonl --batch-size 64 --cuda-device 0 --predictor textual_entailment --silent  
 done
