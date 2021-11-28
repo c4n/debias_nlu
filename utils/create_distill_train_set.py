@@ -27,6 +27,8 @@ def main(argv):
     with jsonlines.open(train_path) as f1,jsonlines.open(pred_path) as f2:
         if len(list(f1.iter())) != len(list(f2.iter())):
            raise Exception('Length Mismatch: Please check the files')
+
+    with jsonlines.open(train_path) as f1,jsonlines.open(pred_path) as f2:
         for line, line_pred in zip(f1.iter(),f2.iter()):
             line['logits'] = line_pred['logits']
             line['distill_probs'] = line_pred['probs']
