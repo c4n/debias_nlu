@@ -64,13 +64,13 @@ class CounterfactualTextualEntailmentPredictor(Predictor):
         else:
             premise_text = json_dict["sentence1"]
             hypothesis_text = json_dict["sentence2"]           
-        if 'sample_weight' in json_dict.keys():
-            sample_weight = json_dict["sample_weight"]
-            return self._dataset_reader.text_to_instance(
-                premise_text, hypothesis_text, sample_weight=sample_weight
-            )
-        else:
-            return self._dataset_reader.text_to_instance(premise_text, hypothesis_text)
+        # if 'sample_weight' in json_dict.keys():
+        #     sample_weight = json_dict["sample_weight"]
+        #     return self._dataset_reader.text_to_instance(
+        #         premise_text, hypothesis_text, sample_weight=sample_weight
+        #     )
+        # else:
+        return self._dataset_reader.text_to_instance(premise_text, hypothesis_text)
 
     @overrides
     def predict_batch_json(
@@ -98,7 +98,8 @@ class CounterfactualTextualEntailmentPredictor(Predictor):
     def predict_instance(self, instance: Instance, cf_weight: float, entropy_curve: float, temperature : nn.Parameter) -> JsonDict:
         self._dataset_reader.apply_token_indexers(instance)
         cf_instance = deepcopy(instance)
-        instance.fields.pop("sample_weight")
+        if "sample_weight" in instance.fields:
+            instance.fields.pop("sample_weight")
         cf_instance.fields["tokens"] = cf_instance.fields.pop("cf_tokens")
         instance.fields.pop("cf_tokens")
         outputs = self._model.forward_on_instance(instance)
