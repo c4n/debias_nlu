@@ -113,7 +113,8 @@ class CounterfactualTextualEntailmentPredictor(Predictor):
         label_dict = {0: "entailment", 1: "contradiction", 2: "neutral"}
         for instance in instances:
             self._dataset_reader.apply_token_indexers(instance)
-            instance.fields.pop("sample_weight")
+            if "sample_weight" in instance.fields:
+                instance.fields.pop("sample_weight")
             cf_instance = deepcopy(instance)
             cf_instance.fields["tokens"] = cf_instance.fields.pop("cf_tokens")
             instance.fields.pop("cf_tokens")

@@ -69,7 +69,7 @@ class WeightedDistillBasicClassifier(BasicClassifier):
         
     def forward(  # type: ignore
         self, tokens: TextFieldTensors, label: torch.IntTensor = None,
-         distill_probs: Union[torch.Tensor, np.ndarray] = None, sample_weight: torch.FloatTensor = None
+         distill_probs: Union[torch.Tensor, np.ndarray] = None, bias_prob: torch.FloatTensor = None
     ) -> Dict[str, torch.Tensor]:
 
         embedded_text = self._text_field_embedder(tokens)
@@ -93,13 +93,13 @@ class WeightedDistillBasicClassifier(BasicClassifier):
         output_dict["token_ids"] = util.get_token_ids_from_text_field_tensors(tokens)
         if label is not None:
             
-            if distill_probs is not None and sample_weight is not None:
+            if distill_probs is not None and bias_prob is not None:
                 log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
                 # input for KLDIVLOSS (log_softmax,softmax)
                 loss_distill = self._distill_loss(log_probs,distill_probs)
                 loss_ce = self._loss(logits, label.long().view(-1))
-                loss = loss_ce * (1-sample_weight**-1) + loss_distill * (sample_weight**-1)
-                loss = loss * sample_weight
+                loss = loss_ce * (1-bias_prob) + loss_distill * (bias_prob)
+                loss = loss * (1/bias_prob)
             else:
                 loss = self._loss(logits, label.long().view(-1))
             output_dict["loss"] = loss.mean()
