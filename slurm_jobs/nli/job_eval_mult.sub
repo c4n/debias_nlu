@@ -14,10 +14,10 @@
  module load cuDNN/7
  module load HDF5
 
-MODEL_DIR="/ist/ist-share/scads/can/outputs_bert_base_clark_1/counterfactual/distill_model_0"
+MODEL_DIR="/raid/can/nli_models/baseline/outputs_bert_base_clark_1_seed33370/normal/gated_distill_model_0"
 # mnli + mnli/snli hard + kaushik 
 echo $MODEL_DIR
-cd ~/debias_nlu
+cd /raid/can/debias_nlu
 source ~/CI_env/bin/activate
 
 mkdir -p  $MODEL_DIR/normal

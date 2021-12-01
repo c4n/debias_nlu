@@ -1,6 +1,6 @@
 #!/bin/bash -l
-#SBATCH --error=output/task.out.%j  # STDOUT output is written in slurm.out.JOBID
-#SBATCH --output=output/task.out.%j # STDOUT error is written in slurm.err.JOBID
+#SBATCH --error=/ist/users/canu/slurm_log/task.out.%j  # STDOUT output is written in slurm.out.JOBID
+#SBATCH --output=/ist/users/canu/slurm_log/task.out.%j # STDOUT error is written in slurm.err.JOBID
 #SBATCH --job-name=fever_baseline       # Job name
 #SBATCH --mem=64GB                  # Memory request for this job
 #SBATCH --nodes=1                   # The number of nodes
@@ -21,7 +21,7 @@ HF_DATASETS_OFFLINE=1
 RESULT_DIR=${1:-results/outputs_fever_weighted_bert_1}
 
 cd ~/debias_nlu
-source ~/envNLI/bin/activate
+source ~/CI_env/bin/activate
 
 python3 -c "import torch; print('# Visible GPUs: ', torch.cuda.device_count());"
 

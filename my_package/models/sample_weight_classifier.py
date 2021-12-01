@@ -129,6 +129,7 @@ class SampleWeightBasicClassifier(BasicClassifier):
             loss = self._loss(logits, label.long().view(-1))
             if sample_weight is not None:
                 loss = loss * sample_weight
+                
             output_dict["loss"] = loss.mean()
             self._accuracy(logits, label)
             for label_i in range(self._num_labels):

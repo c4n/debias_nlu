@@ -14,10 +14,10 @@
  module load cuDNN/7
  module load HDF5
 
-MODEL_DIR="/ist/ist-share/scads/can/outputs_bert_base_clark_1/counterfactual/distill_model_0"
+MODEL_DIR="/raid/can/nli_models/baseline/outputs_bert_base_clark_1_seed13370"
 # mnli + mnli/snli hard + kaushik 
 echo $MODEL_DIR
-cd ~/debias_nlu
+cd /raid/can/debias_nlu
 source ~/CI_env/bin/activate
 
 mkdir -p  $MODEL_DIR/counterfactual
@@ -42,7 +42,7 @@ cf_weight=1.0
 entropy_curve=1.0
 
 MNLI_PARAMS=($MODEL_DIR/model.tar.gz  
-/ist/users/canu/debias_nlu/data/nli/multinli_1.0_dev_mismatched.jsonl:/ist/users/canu/debias_nlu/data/nli/snli_1.0_test_hard.jsonl:/ist/users/canu/debias_nlu/data/nli/dev_mismatched_hard.jsonl:/ist/users/canu/debias_nlu/data/nli/test_kaushik_RP.jsonl:/ist/users/canu/debias_nlu/data/nli/test_kaushik_RH.jsonl:/ist/users/canu/debias_nlu/data/nli/test_kaushik_combined.jsonl
+/raid/can/debias_nlu/data/nli/multinli_1.0_dev_mismatched.jsonl:/raid/can/debias_nlu/data/nli/snli_1.0_test_hard.jsonl:/raid/can/debias_nlu/data/nli/dev_mismatched_hard.jsonl:/raid/can/debias_nlu/data/nli/test_kaushik_RP.jsonl:/raid/can/debias_nlu/data/nli/test_kaushik_RH.jsonl:/raid/can/debias_nlu/data/nli/test_kaushik_combined.jsonl
 $MODEL_DIR/temperature.pt
 --output-file=$MODEL_DIR/counterfactual/result.txt:$MODEL_DIR/counterfactual/snli_hard_result.txt:$MODEL_DIR/counterfactual/mnli_hard_dev_mm_result.txt:$MODEL_DIR/counterfactual/kaushik_rp_result.txt:$MODEL_DIR/counterfactual/kaushik_rh_result.txt:$MODEL_DIR/counterfactual/kaushik_combined_result.txt
 --cuda-device=0
@@ -69,7 +69,7 @@ echo $MODEL_DIR
 
 # echo "naik"
 # NAIK_PARAMS=($MODEL_DIR/model.tar.gz  
-# /ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Antonym/multinli_0.9_antonym_mismatched.jsonl:/ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Numerical_Reasoning/multinli_0.9_quant_hard.jsonl:/ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Word_Overlap/multinli_0.9_taut2_mismatched.jsonl:/ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Negation/multinli_0.9_negation_mismatched.jsonl:/ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Length_Mismatch/multinli_0.9_length_mismatch_mismatched.jsonl:/ist/users/canu/debias_nlu/data/nli/naik_stress_test/stress_tests/Spelling_Error/multinli_0.9_dev_gram_all_mismatched.jsonl
+# /raid/can/debias_nlu/data/nli/naik_stress_test/stress_tests/Antonym/multinli_0.9_antonym_mismatched.jsonl:/raid/can/debias_nlu/data/nli/naik_stress_test/stress_tests/Numerical_Reasoning/multinli_0.9_quant_hard.jsonl:/raid/can/debias_nlu/data/nli/naik_stress_test/stress_tests/Word_Overlap/multinli_0.9_taut2_mismatched.jsonl:/raid/can/debias_nlu/data/nli/naik_stress_test/stress_tests/Negation/multinli_0.9_negation_mismatched.jsonl:/raid/can/debias_nlu/data/nli/naik_stress_test/stress_tests/Length_Mismatch/multinli_0.9_length_mismatch_mismatched.jsonl:/raid/can/debias_nlu/data/nli/naik_stress_test/stress_tests/Spelling_Error/multinli_0.9_dev_gram_all_mismatched.jsonl
 # --output-file=$MODEL_DIR/antonym_result.txt:$MODEL_DIR/numerical_reasoning_result.txt:$MODEL_DIR/word_overlap_result.txt:$MODEL_DIR/negation_result.txt:$MODEL_DIR/length_mismatch_result.txt:$MODEL_DIR/spelling_result.txt
 # --cuda-device=0
 # --entropy_curve=$entropy_curve

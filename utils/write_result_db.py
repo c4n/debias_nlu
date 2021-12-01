@@ -104,15 +104,16 @@ def clean_naik(naik_result):
     return f_text
 
 def main(argv):
+    # get input command line
     sub_file = ''
     try:
        opts, args = getopt.getopt(argv,"hs:",["sub_file="])
     except getopt.GetoptError:
-       print('write_result_db.py -s <inputfile> ')
+       print('python write_result_db.py -s <inputfile> ')
        sys.exit(2)
     for opt, arg in opts:
        if opt == '-h':
-          print('write_result_db.py -s <inputfile>')
+          print('python write_result_db.py -s <inputfile>')
           sys.exit()
        elif opt in ("-s", "--sub_file"):
           sub_file = arg
@@ -235,7 +236,7 @@ def main(argv):
     slurm_script = sub_file
     allennlp_jsonnet_path = train_jsonnet
     allennlp_jsonnet = Json(training_config)
-    random_seed = 13370
+    random_seed = 13370 # hard code ?
     numpy_seed = 1337
     pytorch_seed = 133
     output_dir = model_dir

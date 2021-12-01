@@ -148,7 +148,7 @@ class WeightedFeverReader(DatasetReader):
 
         if sample_weight is not None:
             fields["sample_weight"] = FloatField(sample_weight)
-
+            
         return Instance(fields)
 
     @staticmethod
