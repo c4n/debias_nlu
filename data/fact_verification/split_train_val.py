@@ -6,14 +6,9 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 
-DEFAULT_Y_COLUMN = "is_duplicate"
+DEFAULT_Y_COLUMN = "gold_label"
 DEFAULT_N_DEV_SET = 5000
 FIXED_RANDOM_SEED = 42
-
-NAME_MAPPING_TABLE = {
-    "question1": "sentence1",
-    "question2": "sentence2"
-}
 
 
 def _read_jsonl(file_path: str) -> List[Dict[str, Union[str, int]]]:
@@ -31,8 +26,6 @@ def _read_jsonl(file_path: str) -> List[Dict[str, Union[str, int]]]:
 def _write_jsonl(_x_train: List[Dict], _y_train: List[Dict], path: str) -> None:
     f = open(path, 'w')
     for _x, _y in zip(_x_train, _y_train):
-        if pd.isna(_x["sentence1"]) or pd.isna(_x["sentence2"]):
-            continue
         f.write("%s\n" % json.dumps({**_x, **_y}))
 
     f.close()
@@ -71,7 +64,6 @@ if __name__ == "__main__":
 
     data = _read_jsonl(args.original)
     df = pd.DataFrame(data)
-    df.rename(columns=NAME_MAPPING_TABLE, inplace=True)
 
     y = df.pop(y_col).to_frame()
     X = df

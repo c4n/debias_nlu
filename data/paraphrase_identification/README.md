@@ -17,9 +17,11 @@ bash preprocess.sh
 ```
 Please note that this step requires NLTK on your python env
 
-3. The expected outputs would be 3 jsonl files in "data/paraphrase_identification" path which are
+3. The expected outputs would be 5 jsonl files in "data/paraphrase_identification" path which are
 ```
 1. qqp.train.jsonl
-2. qqp.dev.jsonl
-3. paws.dev_and_test.jsonl
+2. qqp.val.jsonl
+3. qqp.dev.jsonl
+4. paws.train.jsonl
+5. paws.dev_and_test.jsonl
 ```
