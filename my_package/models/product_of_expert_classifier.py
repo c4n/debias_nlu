@@ -95,7 +95,6 @@ class ProductofExpertBasicClassifier(BasicClassifier):
             if bias_logits is not None:
                 log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
                 bias_log_probs = torch.nn.functional.log_softmax(bias_logits, dim=-1)
-                breakpoint()
                 PoE = log_probs +  bias_log_probs
                 PoE = torch.nn.functional.log_softmax(PoE, dim=-1)
                 # input for KLDIVLOSS (log_softmax,softmax)
