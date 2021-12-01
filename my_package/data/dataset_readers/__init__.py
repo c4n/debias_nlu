@@ -4,6 +4,8 @@ from my_package.data.dataset_readers import overlap_score_reader
 from my_package.data.dataset_readers import sample_weight_reader
 
 from my_package.data.dataset_readers import distill_reader
+from my_package.data.dataset_readers import poe_reader
+
 
 from my_package.data.dataset_readers.fever import reader as fever_reader
 from my_package.data.dataset_readers.fever import weighted_reader as weighted_fever_reader
