@@ -105,11 +105,11 @@ class PoESnliReader(DatasetReader):
                     example for example in example_iter if example.get("gold_label") != "-"
                 )
             for example in self.shard_iterable(filtered_example_iter):
-                bias_logits = example.get("bias_logits")
+                bias_probs = example.get("bias_probs")
                 label = example.get("gold_label")
                 premise = example["sentence1"]
                 hypothesis = example["sentence2"]
-                yield self.text_to_instance(premise, hypothesis, label, bias_logits)
+                yield self.text_to_instance(premise, hypothesis, label, bias_probs)
 
     @overrides
     def text_to_instance(
@@ -117,7 +117,7 @@ class PoESnliReader(DatasetReader):
         premise: str,
         hypothesis: str,
         label: str = None,
-        bias_logits: float = None,       
+        bias_probs: float = None,       
     ) -> Instance:
 
         fields: Dict[str, Field] = {}
@@ -143,8 +143,8 @@ class PoESnliReader(DatasetReader):
             maybe_collapsed_label = maybe_collapse_label(label, self.collapse_labels)
             fields["label"] = LabelField(maybe_collapsed_label)
 
-        if bias_logits is not None:
-            fields["bias_logits"] = ArrayField(np.array(bias_logits,dtype='float32'))
+        if bias_probs is not None:
+            fields["bias_probs"] = ArrayField(np.array(bias_probs,dtype='float32'))
 
 
             

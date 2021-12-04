@@ -68,7 +68,7 @@ class ProductofExpertBasicClassifier(BasicClassifier):
         
     def forward(  # type: ignore
         self, tokens: TextFieldTensors, label: torch.IntTensor = None,
-         bias_logits: Union[torch.Tensor, np.ndarray] = None,
+         bias_probs: Union[torch.Tensor, np.ndarray] = None,
     ) -> Dict[str, torch.Tensor]:
 
         embedded_text = self._text_field_embedder(tokens)
@@ -90,13 +90,18 @@ class ProductofExpertBasicClassifier(BasicClassifier):
 
         output_dict = {"logits": logits, "probs": probs}
         output_dict["token_ids"] = util.get_token_ids_from_text_field_tensors(tokens)
+     
         if label is not None:
             
-            if bias_logits is not None:
+            if bias_probs is not None:
+                # output_dict["bert_logits"]=logits
                 log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
-                bias_log_probs = torch.nn.functional.log_softmax(bias_logits, dim=-1)
+                bias_log_probs = torch.nn.functional.log_softmax(bias_probs, dim=-1)
                 PoE = log_probs +  bias_log_probs
+                output_dict["logits"] = PoE
+                output_dict["probs"] = torch.nn.functional.softmax(PoE, dim=-1)
                 PoE = torch.nn.functional.log_softmax(PoE, dim=-1)
+                # breakpoint()
                 # input for KLDIVLOSS (log_softmax,softmax)
                 loss = self._loss(PoE, label.long().view(-1))
 
