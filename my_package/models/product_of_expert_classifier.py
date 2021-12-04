@@ -96,6 +96,7 @@ class ProductofExpertBasicClassifier(BasicClassifier):
             if bias_probs is not None:
                 # output_dict["bert_logits"]=logits
                 log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
+                breakpoint()
                 bias_log_probs = torch.nn.functional.log_softmax(bias_probs, dim=-1)
                 PoE = log_probs +  bias_log_probs
                 output_dict["logits"] = PoE
