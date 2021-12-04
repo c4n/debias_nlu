@@ -124,6 +124,7 @@ class PoESnliReader(DatasetReader):
         premise = self._tokenizer.tokenize(premise)
         hypothesis = self._tokenizer.tokenize(hypothesis)
 
+
         if self._combine_input_fields:
             tokens = self._tokenizer.add_special_tokens(premise, hypothesis)
             fields["tokens"] = TextField(tokens)
