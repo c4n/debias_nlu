@@ -20,14 +20,15 @@ def get_ans(ans):
         return 'non-entailment' 
         
     
-model_path='/raid/can/nli_models/korn_reweight/'
+model_path='/raid/can/nli_models/reweight_utama_github/'
 task='nli'
 data_path='/ist/users/canu/debias_nlu/data/' + task + '/'
 fusion = fuse.sum_fuse
+test_set='hans'
 
-df_hans = pd.read_json(data_path+'hans_prob_korn_lr_overlapping_sample_weight_3class.jsonl', lines=True)
-hans_score=[b for b in df_hans['bias_probs'] ]
-hans_score=np.array(hans_score)
+df_bias_model = pd.read_json(data_path+'hans_prob_korn_lr_overlapping_sample_weight_3class.jsonl', lines=True)
+bias_only_scores=[b for b in df_bias_model['bias_probs'] ]
+bias_only_scores=np.array(bias_only_scores)
 
 
 to_glob = model_path + task + '/*/'
@@ -51,8 +52,8 @@ for seed_idx in range(len(seed_path)):
         list_probs.extend(i)
     x=np.array(list_probs)
     avg=np.average(x,axis=0)
-    # fusion to create y0m0
-    bias_score=fusion(avg,hans_score)
+    # fusion to create y1m0
+    y1m0prob=fusion(bias_only_scores,avg)
 
     # get score of the model on a challenge set
     result_path=seed_path[seed_idx]+'normal/'
@@ -60,12 +61,12 @@ for seed_idx in range(len(seed_path)):
 
     # y1m1
     y1m1prob = []
-    for p,h in zip(df_bert['probs'],hans_score):
+    for p,h in zip(bias_only_scores,df_bert['probs']):
         new_y1m1 = fusion(np.array(p),h)
         y1m1prob.append(new_y1m1)
 
     debias_scores = []
-    for p,b in zip(y1m1prob,bias_score):
+    for p,b in zip(y1m1prob,y1m0prob):
         debias_scores.append(p-b)    
 
     key = {0:"entailment",1:"contradiction",2:"neutral"}
@@ -122,9 +123,9 @@ for seed_idx in range(len(seed_path)):
     all_INTmed = []
     for i in range(len(labels)): 
         y1m1 = y1m1prob[i]
-        y1m0 = bias_score[i]
+        y1m0 = y1m0prob[i]
         TE = y1m1 - y0m0
-        NDE = bias_score[i] - y0m0
+        NDE = y1m1 - y0m0
         y0m1= fusion(x0,np.array(df_bert['probs'][i]) )
         TIE = y1m1 - y1m0
         NIE = y0m1 - y0m0
@@ -157,7 +158,7 @@ for seed_idx in range(len(seed_path)):
         all_TE.append(TE[0][0])
         all_INTmed.append((INTmed[0][0]))
         if  (TIE[0]/TE[0][0])<9999999:
-            cf_ans = np.argmax(np.array(df_bert['probs'][i]-hans_score[i]))
+            cf_ans = np.argmax(np.array(df_bert['probs'][i]-bias_only_scores[i]))
             cf_ans = get_ans(cf_ans)  
             cf_correct = cf_ans==labels[i]
         else:
@@ -165,7 +166,7 @@ for seed_idx in range(len(seed_path)):
             cf_correct = factual_ans ==labels[i]
         pred_correct.append(cf_correct)
 
-    #     np.array(df_bert['probs'][i]-bias_score)
+    #     np.array(df_bert['probs'][i]-y1m0prob)
     #     labels[i]
     TE_explain.append(np.array(all_TE).mean())
     TIE_explain.append(np.array(all_TIE).mean())
