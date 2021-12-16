@@ -19,7 +19,17 @@ from torch.nn import Module
 from torch import tensor
 import numpy as np
 
-            
+class SoftCrossEntropyLoss(Module):
+   def __init__(self):
+      super().__init__()
+
+
+   def forward(self, y_hat, y):
+      p = F.log_softmax(y_hat, 1)
+
+      loss = -(y*p).sum() / y.sum()
+      return loss
+
 @Model.register("utama_distill_basic_classifier")
 class UtamadDistillBasicClassifier(BasicClassifier):
     def __init__(
@@ -94,13 +104,11 @@ class UtamadDistillBasicClassifier(BasicClassifier):
         if label is not None:
             
             if distill_probs is not None and bias_prob is not None:
-                log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
-                breakpoint()
+                # log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
+                scale_temp=torch.pow(distill_probs, (1-bias_prob.unsqueeze(1)))#target
+                scale_probs=scale_temp/torch.sum(scale_temp,1).unsqueeze(1)#target
                 # input for KLDIVLOSS (log_softmax,softmax)
-                loss_distill = self._distill_loss(log_probs,distill_probs)
-                loss_ce = self._loss(logits, label.long().view(-1))
-                loss = loss_ce * (1-bias_prob) + loss_distill * (bias_prob)
-                loss = loss * (1/bias_prob)
+                loss = self._loss(probs, scale_probs)
             else:
                 loss = self._loss(logits, label.long().view(-1))
             output_dict["loss"] = loss.mean()
