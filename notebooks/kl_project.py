@@ -47,7 +47,7 @@ import torch.nn as nn
 
 class CustomImageDataset(Dataset):
     def __init__(self, probs,target_probs):
-        self.probs  = torch.tensor(probs)
+        self.probs  = torch.log(torch.tensor(probs))
         self.target_probs = torch.tensor(target_probs)
     def __len__(self):
         return len(self.probs)
