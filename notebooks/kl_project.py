@@ -29,7 +29,7 @@ bias_score=fusion(avg,hans_score)
 y1m0=bias_score
 result_path=model_path+'normal/'
 # bert model predictions on HANS
-df_bert = pd.read_json(result_path+'hans_result.jsonl', lines=True
+df_bert = pd.read_json(result_path+'hans_result.jsonl', lines=True)
 # ent = []
 y1m1prob = []
 for p,h in zip(df_bert['probs'],hans_score):
