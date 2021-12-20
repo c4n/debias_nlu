@@ -21,7 +21,7 @@ def sum_fuse(a, b):
 
 
 ### Configs ###
-N_LABELS = 1
+N_LABELS = 3
 FUSE = sum_fuse
 
 ### INIT ####
@@ -83,7 +83,6 @@ class CounterFactualModel(nn.Module):
 
     def forward(self, x):
         x = FUSE(self.c, x)
-        x = torch.nn.functional.softmax(x)
         return x
 
 
@@ -93,7 +92,11 @@ def train_loop(dataloader: DataLoader, model: nn.Module, loss_fn, optimizer) -> 
         optimizer.zero_grad()
         # Compute prediction and loss
         pred = model(X)
-        loss = loss_fn(pred, y, model.c)
+        loss = loss_fn(
+            torch.nn.functional.softmax(pred),
+            y,
+            torch.nn.functional.softmax(model.c)
+        )
         loss.backward()
         optimizer.step()
 
@@ -118,19 +121,20 @@ def loss_fn(
     _y: Union[List[float], List[List[float]]],
     _c: Union[List[float], List[List[float]]],
 ):
-    cls_loss = torch.mean(
-        -torch.multiply(
-            _y,
-            torch.log(_pred)
-        )
-    )
+    # cls_loss = torch.mean(
+    #     -torch.multiply(
+    #         _y,
+    #         torch.log(_pred)
+    #     )
+    # )
     kl_loss = torch.mean(
         -torch.multiply(
             _y,
             torch.log(_c)
         )
     )
-    return cls_loss + kl_loss
+    # return cls_loss + kl_loss
+    return kl_loss
 
 
 # train
