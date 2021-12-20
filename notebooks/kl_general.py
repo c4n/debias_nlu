@@ -1,61 +1,32 @@
 import os
+import json
 from typing import List, Tuple, Union
 
 import pandas as pd
 import numpy as np
-from scipy.special import softmax
-from scipy.special import expit
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 import torch.nn as nn
 
 import fuse
-import causal_utils
 
 
-def sum_fuse(a, b):
+def torch_sum_fuse(a: torch.Tensor, b: torch.Tensor):
     zsum = torch.add(a, b)
     zsum = torch.sigmoid(zsum)
     return torch.log(zsum)
 
 
 ### Configs ###
-N_LABELS = 3
-FUSE = sum_fuse
+DEFAULT_CONFIG = {
+    "N_LABELS": 3,
+    "FUSE": torch_sum_fuse,
 
-### INIT ####
-# select model
-model_path = '/raid/can/nli_models/baseline_mind_distill/nli/seed1/'
-# select data path
-data_path = '/raid/can/debias_nlu/data/nli/'
-df = pd.read_json(model_path+'raw_train.jsonl', lines=True)
-# select fusion method here
-fusion = fuse.sum_fuse
-#
-print(data_path+'/raid/can/debias_nlu/data/nli/hans_prob_korn_lr_overlapping_sample_weight_3class.jsonl')
-# exit()
-df_hans = pd.read_json(
-    data_path+'hans_prob_korn_lr_overlapping_sample_weight_3class.jsonl',
-    lines=True
-)
-hans_score = [b for b in df_hans['bias_probs']]
-hans_score = np.array(hans_score)
-list_probs = []
-for i in df['probs']:
-    list_probs.extend(i)
-x = np.array(list_probs)
-avg = np.average(x, axis=0)
-bias_score = fusion(avg, hans_score)
-y1m0 = bias_score
-result_path = model_path+'normal/'
-# bert model predictions on HANS
-df_bert = pd.read_json(result_path+'hans_result.jsonl', lines=True)
-# ent = []
-y1m1prob = []
-for p, h in zip(df_bert['probs'], hans_score):
-    new_y1m1 = fusion(np.array(p), h)
-    y1m1prob.append(new_y1m1)
+    "EPOCHS": 12,
+    "BATCH_SIZE": 64,
+    "LEARNING_RATE": 0.001
+}
 
 
 class CounterFactualDataset(Dataset):
@@ -71,8 +42,9 @@ class CounterFactualDataset(Dataset):
 
 
 class CounterFactualModel(nn.Module):
-    def __init__(self, n_labels: int = 1, init_c: Tuple[float] = None):
+    def __init__(self, n_labels: int = 1, init_c: Tuple[float] = None, fuse=DEFAULT_CONFIG["FUSE"]):
         super(CounterFactualModel, self).__init__()
+        self.fuse = fuse
         if init_c:
             assert n_labels == len(init_c)
             self.c = nn.Parameter(torch.tensor(init_c))
@@ -82,61 +54,117 @@ class CounterFactualModel(nn.Module):
             self.c = nn.Parameter(torch.tensor(_init_c))
 
     def forward(self, x):
-        x = FUSE(self.c, x)
+        x = self.fuse(self.c, x)
         return x
 
 
-def train_loop(dataloader: DataLoader, model: nn.Module, loss_fn, optimizer) -> None:
+def train_loop(
+    dataloader: DataLoader,
+    model: nn.Module,
+    loss_fn,
+    optimizer,
+    scheduler=None,
+    verbose: bool = False
+) -> None:
     size = dataloader.__len__()
-    for batch, (X, y) in enumerate(dataloader):
+    for batch, (bert_probs, bias_model_logits) in enumerate(dataloader):
         optimizer.zero_grad()
         # Compute prediction and loss
-        pred = model(X)
+        pred = model(bias_model_logits)
         loss = loss_fn(
-            torch.nn.functional.softmax(pred),
-            y,
-            torch.nn.functional.softmax(model.c)
+            _bert_pred=bert_probs,
+            _masked_pred=torch.nn.functional.softmax(pred, dim=1)
         )
         loss.backward()
         optimizer.step()
-
-        if batch % 2000 == 0:
-            loss, current = loss.item(), batch * len(X)
-            print(
-                f"batch: {batch},loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
-            print(model.c)
-
-
-model = CounterFactualModel(n_labels=N_LABELS)
-
-# hyper-params
-learning_rate = 1e-3
-batch_size = 64
-epochs = 5
-optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+        if scheduler:
+            scheduler.step()
+    if verbose:
+        print(f"loss: {loss:>7f}")
+        print("c: ", model.c)
+        print("softmax(c): ", torch.nn.functional.softmax(model.c, dim=0))
 
 
 def loss_fn(
-    _pred: Union[List[float], List[List[float]]],
-    _y: Union[List[float], List[List[float]]],
-    _c: Union[List[float], List[List[float]]],
+    _bert_pred: Union[List[float], List[List[float]]],
+    _masked_pred: Union[List[float], List[List[float]]]
 ):
-    # cls_loss = torch.mean(
-    #     -torch.multiply(
-    #         _y,
-    #         torch.log(_pred)
-    #     )
-    # )
     kl_loss = torch.mean(
         -torch.multiply(
-            _y,
-            torch.log(_c)
-        )
+            _bert_pred,
+            torch.log(_masked_pred)
+        ),
+        dim=1
     )
-    # return cls_loss + kl_loss
-    return kl_loss
+    return torch.mean(kl_loss)
 
 
-# train
-train = CounterFactualDataset(df_bert['probs'], y1m1prob)
-train_loop(train, model, loss_fn, optimizer)
+def sharpness_correction(
+    bert_pred_probs: List[float],
+    y1m1probs: List[float],
+    verbose: bool = False,
+    config: dict = DEFAULT_CONFIG
+) -> List[float]:
+    if verbose:
+        print("Config: ", config)
+
+    model = CounterFactualModel(n_labels=config["N_LABELS"])
+    optimizer = torch.optim.Adam(
+        model.parameters(),
+        lr=config["LEARNING_RATE"]
+    )
+
+    # train
+    dataset = CounterFactualDataset(bert_pred_probs, y1m1probs)
+    dataloader = DataLoader(
+        dataset,
+        batch_size=config["BATCH_SIZE"],
+        shuffle=True
+    )
+    for ep in range(config["EPOCHS"]):
+        if verbose:
+            print("======== EPOCH %d ========" % (ep+1))
+        train_loop(dataloader, model, loss_fn, optimizer, verbose=verbose)
+
+    return model.c.detach().cpu().numpy()
+
+
+if __name__ == "__main__":
+    '''
+        This is just for a test
+    '''
+    ### INIT ####
+    # select model
+    model_path = '/raid/can/nli_models/baseline_mind_distill/nli/seed1/'
+    # select data path
+    data_path = '/raid/can/debias_nlu/data/nli/'
+    df = pd.read_json(model_path+'raw_train.jsonl', lines=True)
+    # select fusion method here
+    fusion = fuse.sum_fuse
+    #
+    df_hans = pd.read_json(
+        data_path+'dev_prob_korn_lr_overlapping_sample_weight_3class.jsonl', lines=True)
+    hans_score = [b for b in df_hans['bias_probs']]
+    hans_score = np.array(hans_score)
+    list_probs = []
+    for i in df['probs']:
+        list_probs.extend(i)
+    x = np.array(list_probs)
+    avg = np.average(x, axis=0)
+    bias_score = fusion(avg, hans_score)
+    y1m0 = bias_score
+    result_path = model_path
+    # bert model predictions on HANS
+    df_bert = pd.read_json(result_path+'raw_m.jsonl', lines=True)
+    y1m1prob = []
+    for p, h in zip(df_bert['probs'], hans_score):
+        new_y1m1 = fusion(np.array(p), h)
+        y1m1prob.append(new_y1m1)
+
+    output = sharpness_correction(
+        bert_pred_probs=df_bert['probs'],
+        y1m1probs=y1m1prob,
+        verbose=True
+    )
+
+    print("output: ", output, type(output))
