@@ -89,6 +89,7 @@ optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
 
 #train
+# (log_softmax,softmax)
 train=CustomImageDataset(df_bert['probs'],y1m1prob)
 train_loop(train, model, loss_fn, optimizer)
 
