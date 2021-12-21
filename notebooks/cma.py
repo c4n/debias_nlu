@@ -113,12 +113,13 @@ def report_CMA(model_path,task,data_path,test_set,fusion,correction=False):
         x0=loaded_model.predict_proba(np.array([[0,0,0.41997876976119086]]))
         m0=avg
         y0m0=fusion(x0,m0)      
-
+        # to measure accuracy
         factual_pred_correct = []
         TIE_pred_correct = []
         NIE_pred_correct = []
         INTmed_pred_correct = []
         pred_correct = []
+        # for mediation analysis
         all_TE = []
         all_TIE = []
         all_NIE = []
@@ -191,12 +192,15 @@ def report_CMA(model_path,task,data_path,test_set,fusion,correction=False):
     print(TE_explain,np.array(TE_explain).mean(),np.array(TE_explain).std()) 
     print("TIE:")
     print(TIE_explain,np.array(TIE_explain).mean(),np.array(TIE_explain).std())
+    print("TIE acc:")
     print(TIE_scores,np.array(TIE_scores).mean(),np.array(TIE_scores).std())
     print("NIE:")
     print(NIE_explain,np.array(NIE_explain).mean(),np.array(NIE_explain).std())
+    print("NIE acc:")
     print(NIE_scores,np.array(NIE_scores).mean(),np.array(NIE_scores).std())
     print("INTmed:")
     print(INTmed_explain,np.array(INTmed_explain).mean(),np.array(INTmed_explain).std())
+    print("INTmed acc:")
     print(INTmed_scores,np.array(INTmed_scores).mean(),np.array(INTmed_scores).std())
     print("my query:")
     print(my_causal_query,np.array(my_causal_query).mean(),np.array(my_causal_query).std())
