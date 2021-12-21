@@ -1,5 +1,5 @@
 import os
-import json
+import random
 from typing import List, Tuple, Union
 
 import pandas as pd
@@ -10,6 +10,12 @@ from torch.utils.data import Dataset
 import torch.nn as nn
 
 import fuse
+
+
+MY_RANDOM_SEED = int(os.getenv("MY_RANDOM_SEED", 42))
+torch.manual_seed(MY_RANDOM_SEED)
+random.seed(MY_RANDOM_SEED)
+np.random.seed(MY_RANDOM_SEED)
 
 
 def torch_sum_fuse(a: torch.Tensor, b: torch.Tensor):
@@ -100,8 +106,8 @@ def loss_fn(
 
 
 def sharpness_correction(
-    bert_pred_probs: List[float],
-    y1m1probs: List[float],
+    bert_pred_probs: List[List[float]],
+    y1m1probs: List[List[float]],
     verbose: bool = False,
     config: dict = DEFAULT_CONFIG
 ) -> List[float]:
