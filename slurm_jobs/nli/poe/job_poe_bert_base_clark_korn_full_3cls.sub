@@ -20,15 +20,15 @@ HF_DATASETS_OFFLINE=1
 
 cd /raid/can/debias_nlu
 source ~/CI_env/bin/activate
-MODEL_DIR="/raid/can/nli_models/poe2/outputs_poe_bert_base_korn_clark_1_seed13370"
+MODEL_DIR="/raid/can/nli_models/poe3/outputs_poe_bert_base_korn_clark_1_seed13370"
 echo $MODEL_DIR
 allennlp train configs/nli/poe/mnli_bert_base_poe_korn_clark_1.jsonnet -s $MODEL_DIR/ --include-package my_package --overrides '{ "random_seed": 13370, "numpy_seed": 1337, "pytorch_seed": 133}'
 
-MODEL_DIR="/raid/can/nli_models/poe2/outputs_poe_bert_base_korn_clark_1_seed23370"
-echo $MODEL_DIR
-allennlp train configs/nli/poe/mnli_bert_base_poe_korn_clark_1.jsonnet -s $MODEL_DIR/ --include-package my_package --overrides '{ "random_seed": 23370, "numpy_seed": 2337, "pytorch_seed": 233}'
+# MODEL_DIR="/raid/can/nli_models/poe3/outputs_poe_bert_base_korn_clark_1_seed23370"
+# echo $MODEL_DIR
+# allennlp train configs/nli/poe/mnli_bert_base_poe_korn_clark_1.jsonnet -s $MODEL_DIR/ --include-package my_package --overrides '{ "random_seed": 23370, "numpy_seed": 2337, "pytorch_seed": 233}'
 
 
-MODEL_DIR="/raid/can/nli_models/poe2/outputs_poe_bert_base_korn_clark_1_seed33370"
-echo $MODEL_DIR
-allennlp train configs/nli/poe/mnli_bert_base_poe_korn_clark_1.jsonnet -s $MODEL_DIR/ --include-package my_package --overrides '{ "random_seed": 33370, "numpy_seed": 3337, "pytorch_seed": 333}'
+# MODEL_DIR="/raid/can/nli_models/poe3/outputs_poe_bert_base_korn_clark_1_seed33370"
+# echo $MODEL_DIR
+# allennlp train configs/nli/poe/mnli_bert_base_poe_korn_clark_1.jsonnet -s $MODEL_DIR/ --include-package my_package --overrides '{ "random_seed": 33370, "numpy_seed": 3337, "pytorch_seed": 333}'

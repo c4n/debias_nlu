@@ -107,8 +107,10 @@ class UtamadDistillBasicClassifier(BasicClassifier):
                 # log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
                 scale_temp=torch.pow(distill_probs, (1-bias_prob.unsqueeze(1)))#target
                 scale_probs=scale_temp/torch.sum(scale_temp,1).unsqueeze(1)#target
+                scale_probs.detach()
                 # input for KLDIVLOSS (log_softmax,softmax)
-                loss = self._loss(probs, scale_probs)
+                loss = self._loss(logits, scale_probs)
+
             else:
                 loss = self._loss(logits, label.long().view(-1))
             output_dict["loss"] = loss.mean()
