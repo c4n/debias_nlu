@@ -5,6 +5,7 @@ from scipy.special import expit
 import fuse
 import causal_utils 
 import glob
+from kl_general import sharpness_correction
 
 
 def format_label(label):
@@ -30,7 +31,22 @@ def get_ans(ans,test_set):
 # fusion = fuse.sum_fuse
 # test_set='hans'
 
-def report_CMA(model_path,task,data_path,test_set,fusion):
+
+def get_c(data_path,model_path,fusion,avg):
+    df_bias_dev = pd.read_json(
+    data_path+'dev_prob_korn_lr_overlapping_sample_weight_3class.jsonl', lines=True)
+    bias_dev_score = [b for b in df_bias_dev['bias_probs']]
+    bias_dev_score = np.array(bias_dev_score)
+    y1m0_dev = fusion(avg, bias_dev_score)
+    df_bert_dev = pd.read_json(model_path+'raw_m.jsonl', lines=True)
+    y1m1prob_dev = []
+    for p, h in zip(df_bert_dev['probs'], y1m0_dev):
+        new_y1m1 = fusion(np.array(p), h)
+        y1m1prob_dev.append(new_y1m1)
+    c = sharpness_correction(bias_dev_score, y1m1prob_dev) 
+    return c
+
+def report_CMA(model_path,task,data_path,test_set,fusion,correction=False):
     df_bias_model = pd.read_json(data_path+test_set+'_prob_korn_lr_overlapping_sample_weight_3class.jsonl', lines=True)
     bias_only_scores=[b for b in df_bias_model['bias_probs'] ]
     bias_only_scores=np.array(bias_only_scores)
@@ -58,6 +74,8 @@ def report_CMA(model_path,task,data_path,test_set,fusion):
             list_probs.extend(i)
         x=np.array(list_probs)
         avg=np.average(x,axis=0)
+        if correction:
+            avg = get_c(data_path,seed_path[seed_idx],fusion,avg)
         # fusion to create y1m0
         y1m0prob=fusion(bias_only_scores,avg)
 
