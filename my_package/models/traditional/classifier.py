@@ -1,4 +1,6 @@
+import os
 import operator
+import pickle
 from typing import Callable, Dict, List, Tuple
 
 from sklearn.base import RegressorMixin, TransformerMixin
@@ -33,6 +35,10 @@ class Classifier(TraditionalML):
         model: RegressorMixin = DEFAULT_MODEL,
         config: dict = DEFAULT_CONFIG
     ) -> None:
+        """
+            Currently, tokenizer and normalizer can not be saved to the file.
+            We have to inject it mannually.
+        """
         self.map_labels = {lb: i for i, lb in enumerate(possible_labels)}
         self.model = model
         self.tokenizer = tokenizer
@@ -46,6 +52,36 @@ class Classifier(TraditionalML):
         self.top_ngrams_sent2 = None
         self.words_to_idx = None
         self.n_features = None
+
+    def save(self, folder: str) -> None:
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+        _model = {
+            "map_labels": self.map_labels,
+            "model": self.model,
+            "normalizer": self.normalizer,
+        }
+        _states = {
+            "config": self.config,
+            "top_ngrams_sent1": self.top_ngrams_sent1,
+            "top_ngrams_sent2": self.top_ngrams_sent2,
+            "words_to_idx": self.words_to_idx,
+            "n_features": self.n_features
+        }
+        pickle.dump(_model, open(os.path.join(folder, "model.pickle"), 'wb'))
+        pickle.dump(_states, open(os.path.join(folder, "state.pickle"), 'wb'))
+
+    def load(self, folder: str) -> None:
+        _model = pickle.load(open(os.path.join(folder, "model.pickle"), 'rb'))
+        self.map_labels = _model["map_labels"]
+        self.model = _model["model"]
+        self.normalizer = _model["normalizer"]
+        _states = pickle.load(open(os.path.join(folder, "state.pickle"), 'rb'))
+        self.config = _states["config"]
+        self.top_ngrams_sent1 = _states["top_ngrams_sent1"]
+        self.top_ngrams_sent2 = _states["top_ngrams_sent2"]
+        self.words_to_idx = _states["words_to_idx"]
+        self.n_features = _states["n_features"]
 
     def _validate_config(self):
         assert len(self.config.get("n_grams")) \
