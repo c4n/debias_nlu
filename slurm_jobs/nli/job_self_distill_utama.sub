@@ -14,7 +14,7 @@
  module load cuDNN/7
  module load HDF5
 
-MODEL_DIR="/raid/can/nli_models/baseline/nli/outputs_bert_base_clark_1_seed13370"
+MODEL_DIR="/raid/can/nli_models/baseline/nli/outputs_bert_base_clark_1_seed33370"
 weighted_training_set="/ist/ist-share/scads/can/korn_data/korn_lr_overlap_bias_probs.jsonl" #just to make sure that predictions' indices match with the training data
 
 # mnli + mnli/snli hard + kaushik 
@@ -29,7 +29,7 @@ rm $MODEL_DIR/normal/utama_distill_output_0.jsonl
 if [ ! -f $MODEL_DIR/normal/raw_train_result_0.jsonl ]
 then
    echo "File not found!"
-   allennlp predict $MODEL_DIR/model.tar.gz $weighted_training_set --output-file $MODEL_DIR/normal/raw_train_result_0.jsonl --batch-size 64 --cuda-device 0 --silent
+   allennlp predict $MODEL_DIR/model.tar.gz $weighted_training_set --output-file $MODEL_DIR/normal/raw_train_result_0.jsonl --batch-size 64 --cuda-device 0 --predictor textual_entailment --silent
 #    allennlp cf_predict_scale $MODEL_DIR/model.tar.gz $weighted_training_set $MODEL_DIR/temperature.pt --output-file $MODEL_DIR/normal/raw_train_result_0.jsonl --predictor cf_textual_entailment_distill --batch-size 64 --cuda-device 0 --cf_weight  0.0 --include-package my_package --silent
 fi
 
