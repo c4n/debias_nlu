@@ -22,17 +22,20 @@ def format_label(label):
         return "non-entailment"
     
 def get_ans(ans: int , test_set: str) -> str:
-    if test_set =='hans':
+    if test_set =='mnli_hans':
         if ans == 0:
             return 'entailment'
         else:
             return 'non-entailment' 
+    if test_set =='mnli_test':
+        gt_key = {0:"entailment",1:"contradiction",2:"neutral"}
+        return gt_key[ans]    
     elif test_set == 'fever':
         if ans == 2: # Ref from dictionary in result dir
             return 'contradiction' # since we mapped it in the Allen's reader
         return 'non-contradiction'
     elif test_set == 'qqp': 
-        if ans == 1 # Ref from dictionary in result dirs
+        if ans == 1: # Ref from dictionary in result dirs
             return 'paraphrase'
         return 'non-paraphrase'
     else:
@@ -98,7 +101,7 @@ BERT_MODEL_RESULT_DICT = {
 
 
 def _default_model_pred(
-    _model_name: str = 'mnli_lr_model.sav'
+    _model_name: str = 'mnli_lr_model.sav',
     _input: List[float] = np.array([[0,0,0.41997876976119086]]) #   for NLI
 ) -> List[float]:
     loaded_model = pickle.load(open(_model_name, 'rb'))
@@ -111,7 +114,7 @@ def report_CMA(
     data_path: str,
     test_set: str,
     fusion: Callable[[PROB_T], PROB_T] = fuse.sum_fuse,
-    input_x0: List[float],
+    input_a0: List[float] = [0,0,0.41997876976119086],
 
     correction: bool = False,
     bias_probs_key: str = 'bias_probs',
@@ -188,7 +191,7 @@ def report_CMA(
             # no ground truth
             offset = df_bias_model[ground_truth_key].value_counts()['-'] 
         # CMA
-        a0 = model_pred_method(input_a0)
+        a0 = model_pred_method() #input_a0?
         ya0x0 = fusion(a0,x0)
         # to measure accuracy
         factual_pred_correct = []
