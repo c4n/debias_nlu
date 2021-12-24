@@ -14,7 +14,7 @@
  module load cuDNN/7
  module load HDF5
 
-MODEL_DIR="/raid/can/nli_models/baseline/nli/outputs_bert_base_clark_1_seed33370"
+MODEL_DIR="/raid/can/nli_models/baseline/nli/outputs_bert_base_clark_1_seed13370"
 weighted_training_set="/ist/ist-share/scads/can/korn_data/korn_lr_overlap_bias_probs.jsonl" #just to make sure that predictions' indices match with the training data
 
 # mnli + mnli/snli hard + kaushik 
@@ -25,7 +25,8 @@ mkdir -p $MODEL_DIR/normal
 # Train Model
 # Predict
 rm $MODEL_DIR/normal/raw_train_result_0.jsonl 
-rm $MODEL_DIR/normal/utama_distill_output_0.jsonl 
+rm $MODEL_DIR/normal/utama_distill_output_0.jsonl
+rm -r $MODEL_DIR/normal/utama_kornlr_distill_model_* 
 if [ ! -f $MODEL_DIR/normal/raw_train_result_0.jsonl ]
 then
    echo "File not found!"
