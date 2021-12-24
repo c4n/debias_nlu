@@ -1,3 +1,6 @@
+import os
+from typing import Callable, List, Union
+
 import pandas as pd
 import numpy as np
 from scipy.special import softmax
@@ -6,6 +9,10 @@ import fuse
 import causal_utils 
 import glob
 from kl_general import sharpness_correction
+import pickle
+
+
+PROB_T = Union[List[float], List[List[float]]]
 
 
 def format_label(label):
@@ -14,15 +21,22 @@ def format_label(label):
     else:
         return "non-entailment"
     
-def get_ans(ans,test_set):
+def get_ans(ans: int , test_set: str) -> str:
     if test_set =='hans':
         if ans == 0:
             return 'entailment'
         else:
             return 'non-entailment' 
+    elif test_set == 'fever':
+        if ans == 2: # Ref from dictionary in result dir
+            return 'contradiction' # since we mapped it in the Allen's reader
+        return 'non-contradiction'
+    elif test_set == 'qqp': 
+        if ans == 1 # Ref from dictionary in result dirs
+            return 'paraphrase'
+        return 'non-paraphrase'
     else:
-        key= {0:"entailment",1:"contradiction",2:"neutral"}
-        return key[ans]
+        raise NotImplementedError("Does not support test_set: %s"%test_set)
         
     
 # model_path='/raid/can/nli_models/reweight_utama_github/'
@@ -32,30 +46,92 @@ def get_ans(ans,test_set):
 # test_set='hans'
 
 
-def get_c(data_path,model_path,fusion,avg):
+def get_c(
+    data_path: str ,
+    model_path: str ,
+    fusion: Callable[[PROB_T], PROB_T],
+    x0: PROB_T
+) -> List[float]:
     df_bias_dev = pd.read_json(
     data_path+'dev_prob_korn_lr_overlapping_sample_weight_3class.jsonl', lines=True)
     bias_dev_score = [b for b in df_bias_dev['bias_probs']]
     bias_dev_score = np.array(bias_dev_score)
-    y1m0_dev = fusion(avg, bias_dev_score)
+    ya1x0_dev = fusion(bias_dev_score,x0)
     df_bert_dev = pd.read_json(model_path+'raw_m.jsonl', lines=True)
-    y1m1prob_dev = []
-    for p, h in zip(df_bert_dev['probs'], y1m0_dev):
-        new_y1m1 = fusion(np.array(p), h)
-        y1m1prob_dev.append(new_y1m1)
-    c = sharpness_correction(bias_dev_score, y1m1prob_dev) 
+    ya1x1prob_dev = []
+    for p, h in zip(df_bert_dev['probs'], ya1x0_dev):
+        new_ya1x1 = fusion(np.array(p), h)
+        ya1x1prob_dev.append(new_ya1x1)
+    c = sharpness_correction(bias_dev_score, ya1x1prob_dev) 
     return c
 
-def report_CMA(model_path,task,data_path,test_set,fusion,correction=False):
-    df_bias_model = pd.read_json(data_path+test_set+'_prob_korn_lr_overlapping_sample_weight_3class.jsonl', lines=True)
-    bias_only_scores=[b for b in df_bias_model['bias_probs'] ]
-    bias_only_scores=np.array(bias_only_scores)
+
+BIAS_MODEL_DICT = {
+    'mnli_train':'nli/train_prob_korn_lr_overlapping_sample_weight_3class.jsonl',
+    'mnli_dev_mm':'nli/test_prob_korn_lr_overlapping_sample_weight_3class.jsonl',
+    'mnli_hans':'nli/hans_prob_korn_lr_overlapping_sample_weight_3class.jsonl',
+    
+    'fever_train': 'fact_verification/fever.train.jsonl',
+    'fever_dev': 'fact_verification/fever.dev.jsonl',
+    'fever_sym1': 'fact_verification/fever_symmetric_v0.1.test.jsonl',
+    'fever_sym2': 'fact_verification/fever_symmetric_v0.2.test.jsonl',
+
+    'qqp_train': 'paraphrase_identification/qqp.train.jsonl',
+    'qqp_dev': 'paraphrase_identification/qqp.dev.jsonl',
+    'qqp_paws': 'paraphrase_identification/paws.dev_and_test.jsonl',
+}
+
+BERT_MODEL_RESULT_DICT = {
+    'mnli_train':'raw_train.jsonl',
+    'mnli_dev_mm':'raw_mm.jsonl',
+    'mnli_hans':'normal/hans_result.jsonl',
+    
+    'fever_train': 'raw_fever.train.jsonl',
+    'fever_dev': 'raw_fever.dev.jsonl',
+    'fever_sym1': 'raw_fever_symmetric_v0.1.test.jsonl',
+    'fever_sym2': 'raw_fever_symmetric_v0.2.test.jsonl',
+
+    'qqp_train': 'raw_qqp.train.jsonl',
+    'qqp_dev': 'raw_qqp.dev.jsonl',
+    'qqp_paws': 'raw_paws.dev_and_test.jsonl',
+}
 
 
+def _default_model_pred(
+    _model_name: str = 'mnli_lr_model.sav'
+    _input: List[float] = np.array([[0,0,0.41997876976119086]]) #   for NLI
+) -> List[float]:
+    loaded_model = pickle.load(open(_model_name, 'rb'))
+    return loaded_model.predict_proba(_input)
+
+
+def report_CMA(
+    model_path: str,
+    task: str,
+    data_path: str,
+    test_set: str,
+    fusion: Callable[[PROB_T], PROB_T] = fuse.sum_fuse,
+    input_x0: List[float],
+
+    correction: bool = False,
+    bias_probs_key: str = 'bias_probs',
+    ground_truth_key: str = 'gold_label',
+    model_pred_method: Callable[[List[float]], List[float]] = _default_model_pred,
+) -> None:
+    # load predictions from bias model (e.g., logistic regression)
+    assert test_set in BIAS_MODEL_DICT.keys()
+    df_bias_model = pd.read_json(
+        os.path.join(data_path, BIAS_MODEL_DICT[test_set]),
+        lines=True
+    )
+    a1=[b for b in df_bias_model[bias_probs_key]] # prob for all classes
+    a1=np.array(a1)
+
+    # get a list of all seed dir
     to_glob = model_path + task + '/*/'
+    seed_path = glob.glob(to_glob) # list of model dir for all seeds
 
-
-    seed_path=glob.glob(to_glob)
+    # init list to store results
     TE_explain = []
     TIE_explain = []
     factual_scores = []
@@ -68,51 +144,52 @@ def report_CMA(model_path,task,data_path,test_set,fusion,correction=False):
 
     # get avg score
     for seed_idx in range(len(seed_path)):
-        df = pd.read_json(seed_path[seed_idx]+'raw_train.jsonl', lines=True)
+        df_train = pd.read_json(
+            os.path.join(seed_path[seed_idx], BERT_MODEL_RESULT_DICT[test_set]),
+            lines=True
+        )
         list_probs = []
-        for i in df['probs']:
+        for i in df_train['probs']:
             list_probs.extend(i)
-        x=np.array(list_probs)
-        avg=np.average(x,axis=0)
+        train_pred_results = np.array(list_probs)
+        x0 = np.average(train_pred_results,axis=0)
         if correction:
-            avg = get_c(data_path,seed_path[seed_idx],fusion,avg)
-        # fusion to create y1m0
-        y1m0prob=fusion(bias_only_scores,avg)
+            x0 = get_c(
+                data_path + task + '/',
+                seed_path[seed_idx],
+                fusion, x0
+            )
+        # fusion to create ya1x0
+        ya1x0prob = fusion(a1,x0)
 
         # get score of the model on a challenge set
-        if test_set == 'hans':
-            result_path=seed_path[seed_idx]+'normal/'
-            print(result_path)
-            df_bert = pd.read_json(result_path+'hans_result.jsonl', lines=True)
-        elif test_set == 'test':
-            result_path=seed_path[seed_idx]+'/'
-            df_bert = pd.read_json(result_path+'raw_mm.jsonl', lines=True)
-        elif test_set == 'dev':
-            result_path=seed_path[seed_idx]+'/'
-            df_bert = pd.read_json(result_path+'raw_m.jsonl', lines=True)            
-        # y1m1
-        y1m1prob = []
-        for p,h in zip(bias_only_scores,df_bert['probs']):
-            new_y1m1 = fusion(np.array(p),h)
-            y1m1prob.append(new_y1m1)
+        df_bert = pd.read_json(
+            os.path.join(seed_path[seed_idx], BERT_MODEL_RESULT_DICT[test_set]),
+            lines=True
+        )
+         
+        # ya1x1
+        ya1x1prob = []
+        x1 = df_bert['probs']
+        for b,p in zip(a1,x1):
+            new_ya1x1 = fusion(np.array(b),p)
+            ya1x1prob.append(new_ya1x1)
 
         debias_scores = []
-        for p,b in zip(y1m1prob,y1m0prob):
-            debias_scores.append(p-b)    
+        for factual, counterfactual in zip(ya1x1prob,ya1x0prob):
+            debias_scores.append(factual-counterfactual)    
 
-#         {0:"entailment",1:"contradiction",2:"neutral"}
-        labels=df_bias_model['gold_label']
+        # {0:"entailment",1:"contradiction",2:"neutral"}
+        labels = df_bias_model[ground_truth_key]
+        
+        # to offset samples with no ground truth from accuracy calculation
         offset = 0 
-        if '-' in df_bias_model['gold_label'].value_counts():
+        if '-' in df_bias_model[ground_truth_key].value_counts():
             # no ground truth
-            offset=df_bias_model['gold_label'].value_counts()['-'] 
+            offset = df_bias_model[ground_truth_key].value_counts()['-'] 
         # CMA
-        import pickle
-        modelname='mnli_lr_model.sav'
-        loaded_model = pickle.load(open(modelname, 'rb'))
-        x0=loaded_model.predict_proba(np.array([[0,0,0.41997876976119086]]))
-        m0=avg
-        y0m0=fusion(x0,m0)      
+        a0 = model_pred_method(input_a0)
+        ya0x0 = fusion(a0,x0)
         # to measure accuracy
         factual_pred_correct = []
         TIE_pred_correct = []
@@ -126,16 +203,16 @@ def report_CMA(model_path,task,data_path,test_set,fusion,correction=False):
         all_NDE = []
         all_INTmed = []
         for i in range(len(labels)): 
-            y1m1 = y1m1prob[i]
-            y1m0 = y1m0prob[i]
-            TE = y1m1 - y0m0
-            NDE = y1m1 - y0m0
-            y0m1= fusion(x0,np.array(df_bert['probs'][i]) )
-            TIE = y1m1 - y1m0
-            NIE = y0m1 - y0m0
+            ya1x1 = ya1x1prob[i]
+            ya1x0 = ya1x0prob[i]
+            TE = ya1x1 - ya0x0
+            NDE = ya1x1 - ya0x0
+            ya0x1= fusion(a0,np.array(x1[i]) )
+            TIE = ya1x1 - ya1x0
+            NIE = ya0x1 - ya0x0
             INTmed = TIE - NIE
             # factual
-            factual_ans = np.argmax(df_bert['probs'][i])
+            factual_ans = np.argmax(x1[i])
             factual_ans = get_ans(factual_ans,test_set)
             factual_correct = factual_ans==labels[i]   
             factual_pred_correct.append(factual_correct)
@@ -162,7 +239,7 @@ def report_CMA(model_path,task,data_path,test_set,fusion,correction=False):
             all_TE.append(TE[0][0])
             all_INTmed.append((INTmed[0][0]))
             if  (TIE[0]/TE[0][0])<9999999:
-                cf_ans = np.argmax(np.array(df_bert['probs'][i]-bias_only_scores[i]))
+                cf_ans = np.argmax(np.array(x1[i]-a1[i]))
                 cf_ans = get_ans(cf_ans,test_set)  
                 cf_correct = cf_ans==labels[i]
             else:
@@ -170,7 +247,7 @@ def report_CMA(model_path,task,data_path,test_set,fusion,correction=False):
                 cf_correct = factual_ans ==labels[i]
             pred_correct.append(cf_correct)
 
-        #     np.array(df_bert['probs'][i]-y1m0prob)
+        #     np.array(x1[i]-ya1x0prob)
         #     labels[i]
         total_sample = len(labels)- offset
         factual_scores.append(sum(factual_pred_correct)/total_sample)
