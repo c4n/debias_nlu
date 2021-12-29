@@ -16,7 +16,11 @@
 
 cd ~/debias_nlu
 source ~/CI_env/bin/activate
-allennlp train /ist/users/canu/debias_nlu/configs/nli/baseline/mnli_bert_base_clark_1.jsonnet -s /ist/ist-share/scads/can/outputs_bert_base_clark_1_seed23370/ --overrides '{ "random_seed": 23370, "numpy_seed": 2337, "pytorch_seed": 233}'
+allennlp train /ist/users/canu/debias_nlu/configs/nli/baseline/mnli_bert_base_clark_1.jsonnet -s /raid/can/nli_models/baseline/nli/outputs_bert_base_clark_1_seed43370/ --overrides '{ "random_seed": 43370, "numpy_seed": 4337, "pytorch_seed": 433}'
+allennlp train /ist/users/canu/debias_nlu/configs/nli/baseline/mnli_bert_base_clark_1.jsonnet -s /raid/can/nli_models/baseline/nli/outputs_bert_base_clark_1_seed53370/ --overrides '{ "random_seed": 53370, "numpy_seed": 5337, "pytorch_seed": 533}'
+allennlp train /ist/users/canu/debias_nlu/configs/nli/baseline/mnli_bert_base_clark_1.jsonnet -s /raid/can/nli_models/baseline/nli/outputs_bert_base_clark_1_seed63370/ --overrides '{ "random_seed": 63370, "numpy_seed": 6337, "pytorch_seed": 633}'
+allennlp train /ist/users/canu/debias_nlu/configs/nli/baseline/mnli_bert_base_clark_1.jsonnet -s /raid/can/nli_models/baseline/nli/outputs_bert_base_clark_1_seed73370/ --overrides '{ "random_seed": 73370, "numpy_seed": 7337, "pytorch_seed": 733}' 
+allennlp train /ist/users/canu/debias_nlu/configs/nli/baseline/mnli_bert_base_clark_1.jsonnet -s /raid/can/nli_models/baseline/nli/outputs_bert_base_clark_1_seed83370/ --overrides '{ "random_seed": 83370, "numpy_seed": 8337, "pytorch_seed": 833}'
  
 #psql training_strategy=cross_entropy
 #psql debiasing_method=none
