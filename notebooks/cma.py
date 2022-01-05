@@ -120,6 +120,7 @@ def report_CMA(
     bias_probs_key: str = 'bias_probs',
     ground_truth_key: str = 'gold_label',
     model_pred_method: Callable[[List[float]], List[float]] = _default_model_pred,
+    TIE_ratio_threshold: float = 9999
 ) -> None:
     # load predictions from bias model (e.g., logistic regression)
     assert test_set in BIAS_MODEL_DICT.keys()
@@ -241,7 +242,7 @@ def report_CMA(
             all_TIE.append(TIE[0])
             all_TE.append(TE[0][0])
             all_INTmed.append((INTmed[0][0]))
-            if  (TIE[0]/TE[0][0])<9999999:
+            if  (TIE[0]/TE[0][0])<TIE_ratio_threshold:
                 cf_ans = np.argmax(np.array(x1[i]-a1[i]))
                 cf_ans = get_ans(cf_ans,test_set)  
                 cf_correct = cf_ans==labels[i]
