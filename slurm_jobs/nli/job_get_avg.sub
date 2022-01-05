@@ -17,7 +17,7 @@
 MODEL_DIR="/raid/can/nli_models/reweight_utama_github/nli/outputs_ps_bert_base_clark_utama_lex_seed33370"
 # mnli + mnli/snli hard + kaushik 
 echo $MODEL_DIR
-cd /raid/can/debias_nlu
+cd ~/debias_nlu
 source ~/CI_env/bin/activate
 
 
