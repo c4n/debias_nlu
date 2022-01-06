@@ -21,7 +21,7 @@ from allennlp.common import util
 from allennlp.common.registrable import Registrable
 
 # add field
-# from my_package.my_fields import FloatField
+from my_package.data.fields.float_fields import FloatField
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +30,8 @@ PathOrStr = Union[PathLike, str]
 DatasetReaderInput = Union[PathOrStr, List[PathOrStr], Dict[str, PathOrStr]]
 
 
-@DatasetReader.register("qqp")
-class QQPReader(DatasetReader):
+@DatasetReader.register("poe_qqp")
+class PoEQQPReader(DatasetReader):
     """
     Reads a file from the QQP dataset.  This data is
     formatted as jsonl, one json-formatted instance per line.  The keys in the data are
@@ -83,8 +83,9 @@ class QQPReader(DatasetReader):
                 label = "paraphrase" if doc["is_duplicate"] else "non-paraphrase"
                 premise = doc["sentence1"]
                 hypothesis = doc["sentence2"]
+                bias_probs = doc.get("bias_probs", None)
 
-                yield self.text_to_instance(premise, hypothesis, label)
+                yield self.text_to_instance(premise, hypothesis, label, bias_probs)
                 line = fh.readline()
 
     @overrides
@@ -93,6 +94,7 @@ class QQPReader(DatasetReader):
         premise: str,
         hypothesis: str,
         label: str = None,
+        bias_probs: List[float] = None,
     ) -> Instance:
         fields: Dict[str, Field] = {}
         premise = self._tokenizer.tokenize(premise)
@@ -113,8 +115,10 @@ class QQPReader(DatasetReader):
             }
             fields["metadata"] = MetadataField(metadata)
 
-        if label is not None:
-            fields["label"] = LabelField(label)
+        fields["label"] = LabelField(label)
+
+        if bias_probs is not None:
+            fields["bias_probs"] = FloatField(bias_probs)
 
         return Instance(fields)
 

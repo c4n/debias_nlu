@@ -1,3 +1,4 @@
+import ast
 import json
 from dataclasses import dataclass
 import itertools
@@ -21,7 +22,7 @@ from allennlp.common import util
 from allennlp.common.registrable import Registrable
 
 # add field
-# from my_package.my_fields import FloatField
+from my_package.data.fields.float_fields import FloatField
 
 logger = logging.getLogger(__name__)
 
@@ -30,29 +31,54 @@ PathOrStr = Union[PathLike, str]
 DatasetReaderInput = Union[PathOrStr, List[PathOrStr], Dict[str, PathOrStr]]
 
 
-@DatasetReader.register("qqp")
-class QQPReader(DatasetReader):
+def maybe_collapse_label(label: str, collapse: bool):
     """
-    Reads a file from the QQP dataset.  This data is
+    Helper function that optionally collapses the "contradiction" and "neutral" labels
+    into "non-entailment".
+    """
+    assert label in ["contradiction", "neutral", "entailment"]
+    if collapse and label in ["contradiction", "neutral"]:
+        return "non-entailment"
+    return label
+
+
+@DatasetReader.register("poe_fever")
+class PoEFeverReader(DatasetReader):
+    """
+    Reads a file from the FEVER dataset.  This data is
     formatted as jsonl, one json-formatted instance per line.  The keys in the data are
-    "is_duplicate", "sentence1", and "sentence2".  We convert these keys into fields named "label",
+    "gold_label", "sentence1", and "sentence2".  We convert these keys into fields named "label",
     "premise" and "hypothesis", along with a metadata field containing the tokenized strings of the
     premise and hypothesis.
-    Registered as a `DatasetReader` with name "qqp".
+    Registered as a `DatasetReader` with name "fever".
     # Parameters
     tokenizer : `Tokenizer`, optional (default=`SpacyTokenizer()`)
         We use this `Tokenizer` for both the premise and the hypothesis.  See :class:`Tokenizer`.
     token_indexers : `Dict[str, TokenIndexer]`, optional (default=`{"tokens": SingleIdTokenIndexer()}`)
         We similarly use this for both the premise and the hypothesis.  See :class:`TokenIndexer`.
+    combine_input_fields : `bool`, optional
+            (default=`isinstance(tokenizer, PretrainedTransformerTokenizer)`)
+        If False, represent the premise and the hypothesis as separate fields in the instance.
+        If True, tokenize them together using `tokenizer.tokenize_sentence_pair()`
+        and provide a single `tokens` field in the instance.
+    collapse_labels : `bool`, optional (default=`False`)
+        If `True`, the "neutral" and "contradiction" labels will be collapsed into "non-entailment";
+        "entailment" will be left unchanged.
 
-    Reference: https://quoradata.quora.com/First-Quora-Dataset-Release-Question-Pairs
+    Reference: https://fever.ai/dataset/fever.html
     """
+    MAP_LABELS = {
+        "REFUTES": "contradiction",
+        "NOT ENOUGH INFO": "neutral",
+        "SUPPORTS": "entailment"
+    }
 
     def __init__(
         self,
         tokenizer: Optional[Tokenizer] = None,
         token_indexers: Dict[str, TokenIndexer] = None,
         combine_input_fields: Optional[bool] = None,
+        collapse_labels: Optional[bool] = False,
         ** kwargs,
     ) -> None:
         super().__init__(
@@ -66,33 +92,35 @@ class QQPReader(DatasetReader):
         self._token_indexers = token_indexers or {
             "tokens": SingleIdTokenIndexer()
         }
-
-        if combine_input_fields is not None:
-            self._combine_input_fields = combine_input_fields
-        else:
-            self._combine_input_fields = isinstance(
-                self._tokenizer, PretrainedTransformerTokenizer)
+        self._combine_input_fields = isinstance(
+            self._tokenizer, PretrainedTransformerTokenizer
+        )
+        self.collapse_labels = collapse_labels
 
     @overrides
     def _read(self, file_path: str):
         with open(cached_path(file_path), 'r') as fh:
             line = fh.readline()
             while line:
-                doc = json.loads(line)
+                doc = ast.literal_eval(line)
 
-                label = "paraphrase" if doc["is_duplicate"] else "non-paraphrase"
-                premise = doc["sentence1"]
-                hypothesis = doc["sentence2"]
+                label_key = "gold_label" if "gold_label" in doc.keys() else "label"
+                label = PoEFeverReader.map_label(doc[label_key])
+                evidence_key = "evidence_sentence" if "evidence_sentence" in doc.keys() else "evidence"
+                premise = doc[evidence_key]
+                hypothesis = doc["claim"]
+                bias_probs = doc.get("bias_probs", None)
 
-                yield self.text_to_instance(premise, hypothesis, label)
+                yield self.text_to_instance(premise, hypothesis, label, bias_probs)
                 line = fh.readline()
 
     @overrides
     def text_to_instance(
-        self,
+        self,  # type: ignore
         premise: str,
         hypothesis: str,
         label: str = None,
+        bias_probs: List[float] = None,
     ) -> Instance:
         fields: Dict[str, Field] = {}
         premise = self._tokenizer.tokenize(premise)
@@ -114,9 +142,18 @@ class QQPReader(DatasetReader):
             fields["metadata"] = MetadataField(metadata)
 
         if label is not None:
-            fields["label"] = LabelField(label)
+            maybe_collapsed_label = maybe_collapse_label(
+                label, self.collapse_labels)
+            fields["label"] = LabelField(maybe_collapsed_label)
+
+        if bias_probs is not None:
+            fields["bias_probs"] = FloatField(bias_probs)
 
         return Instance(fields)
+
+    @staticmethod
+    def map_label(label: str) -> str:
+        return PoEFeverReader.MAP_LABELS[label]
 
     @overrides
     def apply_token_indexers(self, instance: Instance) -> Instance:
