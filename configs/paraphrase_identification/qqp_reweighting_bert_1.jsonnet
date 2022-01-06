@@ -18,7 +18,7 @@ local transformer_dim = 768;
     }
   },
   "train_data_path": "data/paraphrase_identification/weighted_qqp.train.jsonl",
-  "validation_data_path": "data/paraphrase_identification/qqp.dev.jsonl",
+  "validation_data_path": "data/paraphrase_identification/qqp.val.jsonl",
   "test_data_path": "data/paraphrase_identification/paws.dev_and_test.jsonl",
   "model": {
     "type": "sample_weight_basic_classifier",
