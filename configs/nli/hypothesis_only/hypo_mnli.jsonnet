@@ -1,5 +1,6 @@
-local transformer_model = "roberta-large";
-local transformer_dim = 1024;
+local transformer_model = "bert-base-uncased";
+local transformer_dim = 768;
+
 
 {
   "dataset_reader": {
@@ -32,8 +33,8 @@ local transformer_dim = 1024;
       }
     },
     "seq2vec_encoder": {
-       "type": "cls_pooler",
-       "embedding_dim": transformer_dim,
+       "type": "bert_pooler",
+       "pretrained_model": transformer_model,
     },
     "feedforward": {
       "input_dim": transformer_dim,
@@ -47,11 +48,11 @@ local transformer_dim = 1024;
   "data_loader": {
     "batch_sampler": {
       "type": "bucket",
-      "batch_size" : 16 
+      "batch_size" : 32 
     }
   },
   "trainer": {
-    "num_epochs": 10,
+    "num_epochs": 3,
     "validation_metric": "+accuracy",
     "learning_rate_scheduler": {
       "type": "slanted_triangular",
@@ -59,9 +60,11 @@ local transformer_dim = 1024;
     },
     "optimizer": {
       "type": "huggingface_adamw",
-      "lr": 2e-6,
+      "lr": 5e-5,
       "weight_decay": 0.1,
-    }
+    },
+    "use_amp": true,
+    "cuda_device" : 0,
   }
 }
 
