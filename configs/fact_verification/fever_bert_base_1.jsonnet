@@ -18,7 +18,7 @@ local transformer_dim = 768;
     }
   },
   "train_data_path": "data/fact_verification/fever.train.jsonl",
-  "validation_data_path": "data/fact_verification/fever.dev.jsonl",
+  "validation_data_path": "data/fact_verification/fever.val.jsonl",
   "model": {
     "type": "basic_classifier",
     "text_field_embedder": {
@@ -58,7 +58,7 @@ local transformer_dim = 768;
     },
     "optimizer": {
       "type": "huggingface_adamw",
-      "lr": 2e-5,
+      "lr": 5e-5,
       "weight_decay": 0.1,
     },
     "use_amp": true,
