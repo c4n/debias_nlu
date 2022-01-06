@@ -25,12 +25,23 @@ source ~/envNLI/bin/activate
 
 python3 -c "import torch; print('# Visible GPUs: ', torch.cuda.device_count());"
 
-allennlp evaluate $RESULT_DIR/model.tar.gz\
-    data/fact_verification/fever_symmetric_v0.1.jsonl\
-    --output-file $RESULT_DIR/metrics_test_v0.1.json\
-    --include-package my_package
+seeds=( 2 3 4 5 6 )
+for seed in "${seeds[@]}"
+do
+    res_dir="${RESULT_DIR}_seed${seed}3370"
+    
+    allennlp evaluate $res_dir/model.tar.gz\
+        data/fact_verification/fever.dev.jsonl\
+        --output-file $res_dir/metrics_dev.json\
+        --include-package my_package
 
-allennlp evaluate $RESULT_DIR/model.tar.gz\
-    data/fact_verification/fever_symmetric_v0.2.jsonl\
-    --output-file $RESULT_DIR/metrics_test_v0.2.json\
-    --include-package my_package
+    allennlp evaluate $res_dir/model.tar.gz\
+        data/fact_verification/fever_symmetric_v0.1.test.jsonl\
+        --output-file $res_dir/metrics_test_v0.1.json\
+        --include-package my_package
+
+    allennlp evaluate $res_dir/model.tar.gz\
+        data/fact_verification/fever_symmetric_v0.2.test.jsonl\
+        --output-file $res_dir/metrics_test_v0.2.json\
+        --include-package my_package
+done
