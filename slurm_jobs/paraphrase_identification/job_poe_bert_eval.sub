@@ -18,7 +18,7 @@ module load HDF5
 TRANSFORMERS_OFFLINE=1
 HF_DATASETS_OFFLINE=1
 
-RESULT_DIR=${1:-results/outputs_qqp_weighted_bert_1}
+RESULT_DIR=${1:-results/outputs_qqp_poe_bert_1}
 
 cd ~/debias_nlu
 source ~/envNLI/bin/activate

@@ -3,7 +3,7 @@ local transformer_dim = 768;
 
 {
   "dataset_reader": {
-    "type": "fever",
+    "type": "poe_fever",
     "tokenizer": {
       "type": "pretrained_transformer",
       "model_name": transformer_model,
@@ -17,10 +17,10 @@ local transformer_dim = 768;
       }
     }
   },
-  "train_data_path": "data/fact_verification/fever.train.jsonl",
+  "train_data_path": "data/fact_verification/weighted_fever.train.jsonl",
   "validation_data_path": "data/fact_verification/fever.val.jsonl",
   "model": {
-    "type": "basic_classifier",
+    "type": "product_of_expert_basic_classifier",
     "text_field_embedder": {
       "token_embedders": {
         "tokens": {

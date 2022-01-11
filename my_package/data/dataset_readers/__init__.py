@@ -6,9 +6,13 @@ from my_package.data.dataset_readers import sample_weight_reader
 from my_package.data.dataset_readers import distill_reader
 from my_package.data.dataset_readers import poe_reader
 
-
 from my_package.data.dataset_readers.fever import reader as fever_reader
+from my_package.data.dataset_readers.fever import counterfactual_reader as counterfactual_fever_reader
 from my_package.data.dataset_readers.fever import weighted_reader as weighted_fever_reader
+from my_package.data.dataset_readers.fever import poe_reader as poe_fever_reader
+from my_package.data.dataset_readers.fever import distill_reader as distill_fever_reader
 
 from my_package.data.dataset_readers.qqp import reader as qqp_reader
 from my_package.data.dataset_readers.qqp import weighted_reader as weighted_qqp_reader
+from my_package.data.dataset_readers.qqp import poe_reader as poe_qqp_reader
+from my_package.data.dataset_readers.qqp import distill_reader as distill_qqp_reader

@@ -6,12 +6,14 @@ from typing import Iterable, Iterator, Optional, Union, TypeVar, Dict, List
 import logging
 import warnings
 
+import numpy as np
 
 from overrides import overrides
 
 from allennlp.common.file_utils import cached_path
 from allennlp.data.dataset_readers.dataset_reader import DatasetReader
 from allennlp.data.fields import Field, TextField, LabelField, MetadataField
+from allennlp.data.fields.array_field import ArrayField
 from allennlp.data.instance import Instance
 from allennlp.data.token_indexers import SingleIdTokenIndexer, TokenIndexer
 from allennlp.data.tokenizers import Tokenizer, SpacyTokenizer, PretrainedTransformerTokenizer
@@ -21,7 +23,7 @@ from allennlp.common import util
 from allennlp.common.registrable import Registrable
 
 # add field
-# from my_package.my_fields import FloatField
+from my_package.data.fields.float_fields import FloatField
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +32,8 @@ PathOrStr = Union[PathLike, str]
 DatasetReaderInput = Union[PathOrStr, List[PathOrStr], Dict[str, PathOrStr]]
 
 
-@DatasetReader.register("qqp")
-class QQPReader(DatasetReader):
+@DatasetReader.register("distill_qqp")
+class DistillQQPReader(DatasetReader):
     """
     Reads a file from the QQP dataset.  This data is
     formatted as jsonl, one json-formatted instance per line.  The keys in the data are
@@ -83,8 +85,10 @@ class QQPReader(DatasetReader):
                 label = "paraphrase" if doc["is_duplicate"] else "non-paraphrase"
                 premise = doc["sentence1"]
                 hypothesis = doc["sentence2"]
+                distill_probs = doc.get("bias_probs", None)
+                bias_prob = doc.get("prob", None)
 
-                yield self.text_to_instance(premise, hypothesis, label)
+                yield self.text_to_instance(premise, hypothesis, label, distill_probs, bias_prob)
                 line = fh.readline()
 
     @overrides
@@ -93,6 +97,8 @@ class QQPReader(DatasetReader):
         premise: str,
         hypothesis: str,
         label: str = None,
+        distill_probs: List[float] = None,
+        bias_prob: float = None,
     ) -> Instance:
         fields: Dict[str, Field] = {}
         premise = self._tokenizer.tokenize(premise)
@@ -113,8 +119,14 @@ class QQPReader(DatasetReader):
             }
             fields["metadata"] = MetadataField(metadata)
 
-        if label is not None:
-            fields["label"] = LabelField(label)
+        fields["label"] = LabelField(label)
+
+        if distill_probs is not None:
+            fields["distill_probs"] = ArrayField(
+                np.array(distill_probs, dtype='float32'))
+
+        if bias_prob is not None:
+            fields["bias_prob"] = FloatField(bias_prob)
 
         return Instance(fields)
 

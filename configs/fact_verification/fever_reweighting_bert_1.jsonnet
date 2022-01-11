@@ -18,7 +18,7 @@ local transformer_dim = 768;
     }
   },
   "train_data_path": "data/fact_verification/weighted_fever.train.jsonl",
-  "validation_data_path": "data/fact_verification/fever.dev.jsonl",
+  "validation_data_path": "data/fact_verification/fever.val.jsonl",
   "model": {
     "type": "sample_weight_basic_classifier",
     "text_field_embedder": {

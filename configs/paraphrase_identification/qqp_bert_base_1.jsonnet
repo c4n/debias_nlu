@@ -18,7 +18,7 @@ local transformer_dim = 768;
     }
   },
   "train_data_path": "data/paraphrase_identification/qqp.train.jsonl",
-  "validation_data_path": "data/paraphrase_identification/qqp.dev.jsonl",
+  "validation_data_path": "data/paraphrase_identification/qqp.val.jsonl",
   "test_data_path": "data/paraphrase_identification/paws.dev_and_test.jsonl",
   "model": {
     "type": "custom_basic_classifier",
@@ -59,7 +59,7 @@ local transformer_dim = 768;
     },
     "optimizer": {
       "type": "huggingface_adamw",
-      "lr": 2e-5,
+      "lr": 5e-5,
       "weight_decay": 0.1,
     },
     "use_amp": true,

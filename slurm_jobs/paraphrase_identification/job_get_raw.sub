@@ -1,0 +1,31 @@
+#!/bin/bash -l
+
+DATA_PATH=${1:-data/fact_verification/}
+BATCH_SIZE=${2:-64}
+MODEL_DIRS=(
+    results/outputs_qqp_bert_base_1
+    results/outputs_qqp_weighted_bert_1
+)
+FILES=(
+    "qqp.train.jsonl"
+    "qqp.val.jsonl"
+    "qqp.dev.jsonl"
+    "paws.dev_and_test.jsonl"
+)
+
+for model in "${MODEL_DIRS[@]}"
+do
+    for file in "${FILES[@]}"
+    do
+        echo "Model:$model, file: $DATA_PATH$file"
+        allennlp predict \
+            $model/model.tar.gz \
+            $DATA_PATH$file \
+            --output-file $model/raw_$file.jsonl \
+            --batch-size $BATCH_SIZE \
+            --cuda-device 0 \
+            --include-package my_package \
+            --predictor vanilla_textual_entailment \
+            --silent
+    done
+done
