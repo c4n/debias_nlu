@@ -134,7 +134,7 @@ def get_c(
 
 
 def _default_model_pred(
-    _input: List[float] = [0, 0, 0.41997876976119086],
+    _input: List[float] = [[0, 0, 0.41997876976119086]],
     _model_name: str = 'mnli_lr_model.sav',
 ) -> List[float]:
     loaded_model = pickle.load(open(_model_name, 'rb'))
@@ -327,7 +327,10 @@ def report_CMA(
             all_TIE.append(bias_tie)
             all_TE.append(bias_te)
             all_INTmed.append((INTmed[0][0]))
-            if (TIE[0]/TE[0][0]) < TIE_ratio_threshold:
+            entropy = -sum(df_bert['probs'][i] *
+                           np.log(df_bert['probs'][i])/np.log(3))
+            if entropy > TIE_ratio_threshold:
+                #             if (TIE[0]/TE[0][0]) < TIE_ratio_threshold:
                 cf_ans = np.argmax(np.array(x1[i]-a1[i]))
                 cf_ans = get_ans(cf_ans, test_set)
                 assert type(cf_ans) == type(labels[i])
