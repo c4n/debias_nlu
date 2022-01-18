@@ -115,7 +115,8 @@ class WeightedQQPReader(DatasetReader):
             }
             fields["metadata"] = MetadataField(metadata)
 
-        fields["label"] = LabelField(label)
+        if label is not None:
+            fields["label"] = LabelField(label)
 
         if sample_weight is not None:
             fields["sample_weight"] = FloatField(sample_weight)

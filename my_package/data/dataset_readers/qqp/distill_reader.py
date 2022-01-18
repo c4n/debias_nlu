@@ -86,7 +86,7 @@ class DistillQQPReader(DatasetReader):
                 premise = doc["sentence1"]
                 hypothesis = doc["sentence2"]
                 distill_probs = doc.get("bias_probs", None)
-                bias_prob = doc.get("prob", None)
+                bias_prob = doc.get("bias_prob", None)
 
                 yield self.text_to_instance(premise, hypothesis, label, distill_probs, bias_prob)
                 line = fh.readline()
@@ -119,7 +119,8 @@ class DistillQQPReader(DatasetReader):
             }
             fields["metadata"] = MetadataField(metadata)
 
-        fields["label"] = LabelField(label)
+        if label is not None:
+            fields["label"] = LabelField(label)
 
         if distill_probs is not None:
             fields["distill_probs"] = ArrayField(
