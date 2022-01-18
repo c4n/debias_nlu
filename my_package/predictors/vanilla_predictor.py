@@ -7,6 +7,7 @@ from allennlp.common.util import JsonDict
 from allennlp.data import Instance
 from allennlp.predictors.predictor import Predictor
 from allennlp.data.fields import LabelField
+from overrides.overrides import op_stream
 
 
 @Predictor.register("vanilla_textual_entailment")
@@ -45,11 +46,11 @@ class TextualEntailmentPredictor(Predictor):
             premise_text = json_dict["premise"]
             hypothesis_text = json_dict["hypothesis"]
         elif "claim" in json_dict:
-            premise_text = json_dict["claim"]
             if "evidence" in json_dict:
-                hypothesis_text = json_dict["evidence"]
+                premise_text = json_dict["evidence"]
             else:
-                hypothesis_text = json_dict["evidence_sentence"]
+                premise_text = json_dict["evidence_sentence"]
+            hypothesis_text = json_dict["claim"]
         elif "sentence1" in json_dict:
             premise_text = json_dict["sentence1"]
             hypothesis_text = json_dict["sentence2"]
