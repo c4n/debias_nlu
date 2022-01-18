@@ -29,17 +29,26 @@ BIAS_MODEL_DICT = {
     'qqp_paws': 'weighted_paws.dev_and_test.jsonl',
 }
 
+TASK2TRAIN_DICT = {
+    "nli": "mnli_val",
+    "fever": "fever_val",
+    "qqp": "qqp_val"
+}
+
 BERT_MODEL_RESULT_DICT = {
     'mnli_train': 'raw_train.jsonl',
+    'mnli_val': 'raw_m.jsonl',
     'mnli_dev_mm': 'raw_mm.jsonl',
     'mnli_hans': 'normal/hans_result.jsonl',
 
     'fever_train': 'raw_fever.train.jsonl',
+    'fever_val': 'raw_fever.val.jsonl',
     'fever_dev': 'raw_fever.dev.jsonl',
     'fever_sym1': 'raw_fever_symmetric_v0.1.test.jsonl',
     'fever_sym2': 'raw_fever_symmetric_v0.2.test.jsonl',
 
     'qqp_train': 'raw_qqp.train.jsonl',
+    'qqp_val': 'raw_qqp.val.jsonl',
     'qqp_dev': 'raw_qqp.dev.jsonl',
     'qqp_paws': 'raw_paws.dev_and_test.jsonl',
 }
@@ -147,7 +156,7 @@ def report_CMA(
     data_path: str,
     test_set: str,
     fusion: Callable[[PROB_T], PROB_T] = fuse.sum_fuse,
-    input_a0: List[float] = [0, 0, 0.41997876976119086],
+    input_a0: List[float] = [[0, 0, 0.41997876976119086]],
     estimate_c_config: dict = ESTIMATE_C_DEFAULT_CONFIG,
 
     correction: bool = False,
@@ -201,17 +210,20 @@ def report_CMA(
     # get avg score
     for seed_idx in range(len(seed_path)):
         print(os.path.join(seed_path[seed_idx],
-                           BERT_MODEL_RESULT_DICT[test_set]))
-        df_train = pd.read_json(
-            os.path.join(seed_path[seed_idx],
-                         BERT_MODEL_RESULT_DICT[test_set]),
+                           BERT_MODEL_RESULT_DICT[TASK2TRAIN_DICT[task]]))
+        df_val = pd.read_json(
+            os.path.join(
+                seed_path[seed_idx],
+                BERT_MODEL_RESULT_DICT[TASK2TRAIN_DICT[task]]
+            ),
             lines=True
         )
         list_probs = []
-        for i in df_train['probs']:
+        for i in df_val['probs']:
             list_probs.extend(i)
         train_pred_results = np.array(list_probs)
         x0 = np.average(train_pred_results, axis=0)
+        n_labels = x0.shape[0]
         if correction:
             x0 = get_c(
                 data_path=os.path.join(data_path, task),
@@ -328,7 +340,7 @@ def report_CMA(
             all_TE.append(bias_te)
             all_INTmed.append((INTmed[0][0]))
             entropy = -sum(df_bert['probs'][i] *
-                           np.log(df_bert['probs'][i])/np.log(3))
+                           np.log(df_bert['probs'][i])/np.log(n_labels))
             if entropy > TIE_ratio_threshold:
                 #             if (TIE[0]/TE[0][0]) < TIE_ratio_threshold:
                 cf_ans = np.argmax(np.array(x1[i]-a1[i]))
