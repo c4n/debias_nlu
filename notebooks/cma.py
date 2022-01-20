@@ -58,7 +58,7 @@ def get_ans(ans: int, test_set: str) -> str:
             return 'entailment'
         else:
             return 'non-entailment'
-    if test_set == 'mnli_test':
+    if test_set == 'mnli_test' or test_set == 'mnli_dev_mm'  or test_set == 'mnli_dev_m' :
         gt_key = {0: "entailment", 1: "contradiction", 2: "neutral"}
         return gt_key[ans]
     elif test_set == 'fever':
@@ -126,7 +126,7 @@ def report_CMA(
     bias_val_pred_file: str = 'dev_prob_korn_lr_overlapping_sample_weight_3class.jsonl',
     model_val_pred_file: str = 'raw_m.jsonl',
 
-    TIE_ratio_threshold: float = 9999
+    entropy_threshold: float = 9999
 ) -> None:
     '''
         Arguments:
@@ -263,7 +263,7 @@ def report_CMA(
             all_TE.append(TE[0][0])
             all_INTmed.append((INTmed[0][0]))
             entropy=-sum(df_bert['probs'][i]*np.log(df_bert['probs'][i])/np.log(3))
-            if  entropy>TIE_ratio_threshold:
+            if  entropy>entropy_threshold:
 #             if (TIE[0]/TE[0][0]) < TIE_ratio_threshold:
                 cf_ans = np.argmax(np.array(x1[i]-a1[i]))
                 cf_ans = get_ans(cf_ans, test_set)
