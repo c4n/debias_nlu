@@ -31,5 +31,5 @@ do
     allennlp train configs/fact_verification/fever_bert_base_1.jsonnet \
         -s ${RESULT_DIR}_seed${seed}3370 \
         --include-package my_package \
-        --overrides '{ "random_seed": ${seed}3370, "numpy_seed": ${seed}337, "pytorch_seed": ${seed}33}'
+        --overrides "{ "random_seed": ${seed}3370, "numpy_seed": ${seed}337, "pytorch_seed": ${seed}33}"
 done

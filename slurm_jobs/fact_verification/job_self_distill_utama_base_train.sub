@@ -27,7 +27,7 @@ source ~/CI_env/bin/activate
 
 python3 -c "import torch; print('# Visible GPUs: ', torch.cuda.device_count());"
 
-seeds=( 2 3 4 )
+seeds=( 2 3 4 5 6 )
 for seed in "${seeds[@]}"
 do
     model_dir="${MODEL_DIR}_seed${seed}3370"
@@ -36,18 +36,14 @@ do
     ## Train Model
     # Predict
     rm -f $SUB_MODEL_DIR/raw_train_result_0.jsonl 
-    if [ ! -f $SUB_MODEL_DIR/raw_train_result_0.jsonl ]
-    then
-        echo "File not found!"
-        allennlp predict \
-            $model_dir/model.tar.gz \
-            $WEIGHTED_TRAINING_SET \
-            --output-file $SUB_MODEL_DIR/raw_train_result_0.jsonl \
-            --batch-size $BATCH_SIZE \
-            --cuda-device 0 \
-            --predictor vanilla_textual_entailment \
-            --silent
-    fi
+    allennlp predict \
+        $model_dir/model.tar.gz \
+        $WEIGHTED_TRAINING_SET \
+        --output-file $SUB_MODEL_DIR/raw_train_result_0.jsonl \
+        --batch-size $BATCH_SIZE \
+        --cuda-device 0 \
+        --predictor vanilla_textual_entailment \
+        --silent
 
     echo $model_dir
 
@@ -64,7 +60,7 @@ do
             $CONFIG \
             -s $SUB_MODEL_DIR/utama_distill_model_${i} \
             --include-package my_package \
-            --overrides '{"train_data_path": "'"$SUB_MODEL_DIR/utama_distill_output_${i}.jsonl"'",}'
+            --overrides '{"train_data_path": "'"${SUB_MODEL_DIR}/utama_distill_output_${i}.jsonl"'",}'
     done
 done
 

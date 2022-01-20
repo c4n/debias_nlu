@@ -14,6 +14,8 @@ import fuse
 
 MY_RANDOM_SEED = int(os.getenv("MY_RANDOM_SEED", 42))
 torch.manual_seed(MY_RANDOM_SEED)
+TORCH_GENERATOR = torch.Generator()
+TORCH_GENERATOR.manual_seed(MY_RANDOM_SEED)
 random.seed(MY_RANDOM_SEED)
 np.random.seed(MY_RANDOM_SEED)
 
@@ -95,14 +97,28 @@ def loss_fn(
     _bert_pred: Union[List[float], List[List[float]]],
     _masked_pred: Union[List[float], List[List[float]]]
 ):
-    kl_loss = torch.mean(
-        -torch.multiply(
+    # Ref from CF-VQA
+    # kl_loss = torch.mean(
+    #     -torch.multiply(
+    #         _bert_pred,
+    #         torch.log(_masked_pred)
+    #     ),
+    #     dim=1
+    # )
+    # return torch.mean(kl_loss)
+    new_kl_loss = torch.mean(
+        torch.multiply(
             _bert_pred,
-            torch.log(_masked_pred)
+            torch.log(
+                torch.div(
+                    _bert_pred,
+                    _masked_pred
+                )
+            )
         ),
         dim=1
     )
-    return torch.mean(kl_loss)
+    return torch.mean(new_kl_loss)
 
 
 def sharpness_correction(
@@ -125,7 +141,8 @@ def sharpness_correction(
     dataloader = DataLoader(
         dataset,
         batch_size=config["BATCH_SIZE"],
-        shuffle=True
+        shuffle=True,
+        generator=TORCH_GENERATOR
     )
     for ep in range(config["EPOCHS"]):
         if verbose:

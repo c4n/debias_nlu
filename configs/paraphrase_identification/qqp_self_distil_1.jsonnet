@@ -3,7 +3,7 @@ local transformer_dim = 768;
 
 {
   "dataset_reader": {
-    "type": "weighted_fever",
+    "type": "weighted_qqp",
     "tokenizer": {
       "type": "pretrained_transformer",
       "model_name": transformer_model,
@@ -17,10 +17,11 @@ local transformer_dim = 768;
       }
     }
   },
-  "train_data_path": "data/fact_verification/weighted_fever.train.jsonl",
-  "validation_data_path": "data/fact_verification/fever.val.jsonl",
+  "train_data_path": "data/paraphrase_identification/qqp.train.jsonl",
+  "validation_data_path": "data/paraphrase_identification/qqp.val.jsonl",
+  "test_data_path": "data/paraphrase_identification/paws.dev_and_test.jsonl",
   "model": {
-    "type": "sample_weight_basic_classifier",
+    "type": "weighted_distill_basic_classifier",
     "text_field_embedder": {
       "token_embedders": {
         "tokens": {
@@ -50,7 +51,7 @@ local transformer_dim = 768;
     }
   },
   "trainer": {
-    "num_epochs": 3,
+    "num_epochs": 4,
     "validation_metric": "+accuracy",
     "learning_rate_scheduler": {
       "type": "slanted_triangular",
@@ -58,7 +59,7 @@ local transformer_dim = 768;
     },
     "optimizer": {
       "type": "huggingface_adamw",
-      "lr": 1e-5,
+      "lr": 5e-5,
       "weight_decay": 0.1,
     },
     "use_amp": true,

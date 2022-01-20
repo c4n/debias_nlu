@@ -31,7 +31,7 @@ class SoftCrossEntropyLoss(Module):
         return loss
 
 
-def custom_kl_loss(probs, scale_probs):
+def custom_cross_entropy_loss(probs, scale_probs):
     loss = -torch.mul(scale_probs, torch.log(probs))
     return torch.mean(
         torch.mean(
@@ -130,8 +130,8 @@ class UtamadDistillBasicClassifier(BasicClassifier):
                     torch.sum(scale_temp, 1).unsqueeze(1)  # target
                 scale_probs.detach()
                 # input for KLDIVLOSS (log_softmax,softmax)
-                loss = self._loss(logits, scale_probs)
-                # loss = custom_kl_loss(probs, scale_probs)
+                # loss = self._loss(logits, scale_probs)
+                loss = custom_cross_entropy_loss(probs, scale_probs)
             else:
                 loss = self._loss(logits, label.long().view(-1))
             output_dict["loss"] = loss.mean()

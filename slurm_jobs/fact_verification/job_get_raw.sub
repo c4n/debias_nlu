@@ -1,11 +1,9 @@
 #!/bin/bash -l
 
-DATA_PATH=${1:-data/fact_verification/}
-BATCH_SIZE=${2:-64}
-MODEL_DIRS=(
-    results/outputs_fever_bert_base_1
-    results/outputs_fever_weighted_bert_1
-)
+MODEL_DIR=${1:-results/outputs_fever_bert_base_1}
+DATA_PATH=${2:-data/fact_verification/}
+BATCH_SIZE=${3:-64}
+
 FILES=(
     "fever.train.jsonl"
     "fever.val.jsonl"
@@ -14,19 +12,16 @@ FILES=(
     "fever_symmetric_v0.2.test.jsonl"
 )
 
-for model in "${MODEL_DIRS[@]}"
+for file in "${FILES[@]}"
 do
-    for file in "${FILES[@]}"
-    do
-        echo "Model:$model, file: $DATA_PATH$file"
-        allennlp predict \
-            $model/model.tar.gz \
-            $DATA_PATH$file \
-            --output-file $model/raw_$file \
-            --batch-size $BATCH_SIZE \
-            --cuda-device 0 \
-            --include-package my_package \
-            --predictor vanilla_textual_entailment \
-            --silent
-    done
+    echo "Model:$MODEL_DIR, file: $DATA_PATH$file"
+    allennlp predict \
+        $MODEL_DIR/model.tar.gz \
+        $DATA_PATH$file \
+        --output-file $MODEL_DIR/raw_$file \
+        --batch-size $BATCH_SIZE \
+        --cuda-device 0 \
+        --include-package my_package \
+        --predictor vanilla_textual_entailment \
+        --silent
 done

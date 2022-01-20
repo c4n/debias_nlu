@@ -115,7 +115,8 @@ class PoEQQPReader(DatasetReader):
             }
             fields["metadata"] = MetadataField(metadata)
 
-        fields["label"] = LabelField(label)
+        if label is not None:
+            fields["label"] = LabelField(label)
 
         if bias_probs is not None:
             fields["bias_probs"] = FloatField(bias_probs)

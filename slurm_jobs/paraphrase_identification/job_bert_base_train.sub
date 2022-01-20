@@ -25,17 +25,12 @@ source ~/envNLI/bin/activate
 
 python3 -c "import torch; print('# Visible GPUs: ', torch.cuda.device_count());"
 
-allennlp train configs/paraphrase_identification/qqp_bert_base_1.jsonnet \
-    -s ${RESULT_DIR}_seed23370 \
-    --include-package my_package \
-    --overrides '{ "random_seed": 23370, "numpy_seed": 2337, "pytorch_seed": 233}'
 
-allennlp train configs/paraphrase_identification/qqp_bert_base_1.jsonnet \
-    -s ${RESULT_DIR}_seed33370 \
-    --include-package my_package \
-    --overrides '{ "random_seed": 33370, "numpy_seed": 3337, "pytorch_seed": 333}'
-
-allennlp train configs/paraphrase_identification/qqp_bert_base_1.jsonnet \
-    -s ${RESULT_DIR}_seed43370 \
-    --include-package my_package \
-    --overrides '{ "random_seed": 43370, "numpy_seed": 4337, "pytorch_seed": 433}'
+seeds=( 5 6 )
+for seed in "${seeds[@]}"
+do
+    allennlp train configs/paraphrase_identification/qqp_bert_base_1.jsonnet \
+        -s ${RESULT_DIR}_seed${seed}3370 \
+        --include-package my_package \
+        --overrides "{ "random_seed": ${seed}3370, "numpy_seed": ${seed}337, "pytorch_seed": ${seed}33}"
+done

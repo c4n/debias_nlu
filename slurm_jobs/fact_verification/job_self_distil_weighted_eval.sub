@@ -1,7 +1,7 @@
 #!/bin/bash -l
 #SBATCH --error=output/task.out.%j  # STDOUT output is written in slurm.out.JOBID
 #SBATCH --output=output/task.out.%j # STDOUT error is written in slurm.err.JOBID
-#SBATCH --job-name=qqp_baseline       # Job name
+#SBATCH --job-name=fever_baseline       # Job name
 #SBATCH --mem=64GB                  # Memory request for this job
 #SBATCH --nodes=1                   # The number of nodes
 #SBATCH --partition=gpu-cluster
@@ -18,25 +18,24 @@ module load HDF5
 TRANSFORMERS_OFFLINE=1
 HF_DATASETS_OFFLINE=1
 
-RESULT_DIR=${1:-results/outputs_qqp_poe_bert_1}
+RESULT_DIR=${1:-results/outputs_fever_weighted_bert_1/base_distil/distill_model_3}
 
 cd ~/debias_nlu
 source ~/envNLI/bin/activate
 
 python3 -c "import torch; print('# Visible GPUs: ', torch.cuda.device_count());"
 
-seeds=( 5 6 )
-for seed in "${seeds[@]}"
-do
-    res_dir="${RESULT_DIR}_seed${seed}3370"
+allennlp evaluate $RESULT_DIR/model.tar.gz\
+    data/fact_verification/fever.dev.jsonl\
+    --output-file $RESULT_DIR/metrics_dev.json\
+    --include-package my_package
 
-    allennlp evaluate $res_dir/model.tar.gz\
-        data/paraphrase_identification/qqp.dev.jsonl\
-        --output-file $res_dir/metrics_dev.json\
-        --include-package my_package
+allennlp evaluate $RESULT_DIR/model.tar.gz\
+    data/fact_verification/fever_symmetric_v0.1.test.jsonl\
+    --output-file $RESULT_DIR/metrics_test_v0.1.json\
+    --include-package my_package
 
-    allennlp evaluate $res_dir/model.tar.gz\
-        data/paraphrase_identification/paws.dev_and_test.jsonl\
-        --output-file $res_dir/metrics_paws.json\
-        --include-package my_package
-done
+allennlp evaluate $RESULT_DIR/model.tar.gz\
+    data/fact_verification/fever_symmetric_v0.2.test.jsonl\
+    --output-file $RESULT_DIR/metrics_test_v0.2.json\
+    --include-package my_package
