@@ -11,6 +11,7 @@ from allennlp.nn import InitializerApplicator, util
 from allennlp.nn.util import get_text_field_mask
 from allennlp.training.metrics import CategoricalAccuracy
 
+import pandas as pd
 
 @Model.register("get_avg_basic_classifier")
 class GetAvgBasicClassifier(Model):
@@ -125,7 +126,6 @@ class GetAvgBasicClassifier(Model):
        
         # avg embeddings
         out_embeddings = embedded_text
-
         if self._feedforward is not None:
             embedded_text = self._feedforward(embedded_text)
 
@@ -140,6 +140,24 @@ class GetAvgBasicClassifier(Model):
             self._accuracy(logits, label)
 
         return output_dict
+
+
+    def forward_avg_embed(self, path):
+
+        data = pd.read_json(path, lines=True)
+
+        embeddings = data['embeddings']
+
+        embeddings = torch.tensor(embeddings)
+
+        avg_embeddings = torch.mean(embeddings, dim=0)
+
+        avg_embeddings = torch.unsqueeze(avg_embeddings, 0)
+
+        avg_embeddings = self._feedforward(avg_embeddings)
+        logits = self._classification_layer(avg_embeddings)
+        probs = torch.nn.functional.softmax(logits, dim=-1)
+        return probs
 
     @overrides
     def make_output_human_readable(
