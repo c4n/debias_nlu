@@ -150,7 +150,8 @@ def report_CMA(
         os.path.join(data_path, BIAS_MODEL_DICT[test_set]), lines=True
     )
     a1 = [b for b in df_bias_model[bias_probs_key]]  # prob for all classes
-    a1 = np.array(a1)
+    a1 = np.array(a1) # [N_batch, n_class]
+    n_labels = a1.shape[1] 
 
     # get a list of all seed dir
     if not seed_path:
@@ -179,18 +180,19 @@ def report_CMA(
                 seed_path[seed_idx], BERT_MODEL_RESULT_DICT[TASK2TRAIN_DICT[task]]
             )
         )
-        df_val = pd.read_json(
-            os.path.join(
-                seed_path[seed_idx], BERT_MODEL_RESULT_DICT[TASK2TRAIN_DICT[task]]
-            ),
-            lines=True,
-        )
-        list_probs = []
-        for i in df_val["probs"]:
-            list_probs.append(i)
-        train_pred_results = np.array(list_probs)
-        x0 = np.average(train_pred_results, axis=0)
-        n_labels = x0.shape[0]
+        # df_val = pd.read_json(
+        #     os.path.join(
+        #         seed_path[seed_idx], BERT_MODEL_RESULT_DICT[TASK2TRAIN_DICT[task]]
+        #     ),
+        #     lines=True,
+        # )
+        # list_probs = []
+        # for i in df_val["probs"]:
+        #     list_probs.append(i)
+        # train_pred_results = np.array(list_probs)
+        # x0 = np.average(train_pred_results, axis=0)
+        # n_labels = x0.shape[0]
+        x0 = (1/n_labels) * np.ones(n_labels)
 
         if correction:
             x0 = get_c(
@@ -235,7 +237,8 @@ def report_CMA(
             # no ground truth
             offset = df_bias_model[ground_truth_key].value_counts()["-"]
         # CMA
-        a0 = model_pred_method(_input=input_a0)  # input_a0?
+        # a0 = model_pred_method(_input=input_a0)  # input_a0?
+        a0 = (1/n_labels) * np.ones(n_labels)
         # print("input_a0: ", input_a0)
         # print("a0: ", a0)
         ya0x0 = fusion(a0, x0)
