@@ -76,7 +76,7 @@ def get_bias_effect(
     test_set: str,
 ) -> Tuple[Union[List[float], List[List[float]]]]:
     if "nli" in test_set:
-        return (nde[0][0], nie[0][0], tie[0], te[0][0])
+        return (nde[0], nie[0], tie[0], te[0])
     elif "fever" in test_set:
         return (nde[0][2], nie[0][2], tie[2], te[0][2])
     elif "qqp" in test_set:
@@ -261,8 +261,9 @@ def report_CMA(
         for i in range(len(labels)):
             ya1x1 = ya1x1prob[i]
             ya1x0 = ya1x0prob[i]
+           
             TE = ya1x1 - ya0x0
-            NDE = ya1x1 - ya0x0
+            NDE = ya1x0 - ya0x0
             ya0x1 = fusion(a0, np.array(x1[i]))
             TIE = ya1x1 - ya1x0
             NIE = ya0x1 - ya0x0
@@ -284,14 +285,14 @@ def report_CMA(
             TIE_correct = TIE_ans == labels[i]
             TIE_pred_correct.append(TIE_correct)
             # INTmed
-            INTmed_ans = np.argmax(INTmed[0])
+            INTmed_ans = np.argmax(INTmed)
             INTmed_ans = get_ans(INTmed_ans, test_set)
             assert type(INTmed_ans) == type(labels[i])
             intmed_y_preds.append(INTmed_ans)
             INTmed_correct = INTmed_ans == labels[i]
             INTmed_pred_correct.append(INTmed_correct)
             # NIE
-            NIE_ans = np.argmax(NIE[0])
+            NIE_ans = np.argmax(NIE)
             NIE_ans = get_ans(NIE_ans, test_set)
             assert type(NIE_ans) == type(labels[i])
             nie_y_preds.append(NIE_ans)
@@ -306,7 +307,7 @@ def report_CMA(
             all_NIE.append(bias_nie)
             all_TIE.append(bias_tie)
             all_TE.append(bias_te)
-            all_INTmed.append((INTmed[0][0]))
+            all_INTmed.append((INTmed[0]))
 
             entropy = -sum(
                 df_bert["probs"][i] * np.log(df_bert["probs"][i]) / np.log(n_labels)
@@ -351,15 +352,17 @@ def report_CMA(
                     ]
 
     print("factual score:")
-    print(
-        factual_scores, np.array(factual_scores).mean(), np.array(factual_scores).std()
-    )
+    print(factual_scores)
+    print(np.array(factual_scores).mean(), np.array(factual_scores).std())
+
     print("TE:")
-    print(TE_explain, np.array(TE_explain).mean(), np.array(TE_explain).std())
+    print(np.array(TE_explain).mean(), np.array(TE_explain).std())
+    
     print("TIE:")
-    print(TIE_explain, np.array(TIE_explain).mean(), np.array(TIE_explain).std())
+    print(np.array(TIE_explain).mean(), np.array(TIE_explain).std())
     print("TIE acc:")
-    print(TIE_scores, np.array(TIE_scores).mean(), np.array(TIE_scores).std())
+    print(TIE_scores)
+    print(np.array(TIE_scores).mean(), np.array(TIE_scores).std())
     print(ASD(TIE_scores, factual_scores))
 
     print(
@@ -368,18 +371,14 @@ def report_CMA(
         {"%s_mean_sd" % k: [np.mean(v), np.std(v)] for k, v in TIE_f1.items()},
     )
     print("NIE:")
-    print(NIE_explain, np.array(NIE_explain).mean(), np.array(NIE_explain).std())
+    print(np.array(NIE_explain).mean(), np.array(NIE_explain).std())
     print("NIE acc:")
-    print(NIE_scores, np.array(NIE_scores).mean(), np.array(NIE_scores).std())
-    print("INTmed:")
-    print(
-        INTmed_explain, np.array(INTmed_explain).mean(), np.array(INTmed_explain).std()
-    )
-    print("INTmed acc:")
-    print(INTmed_scores, np.array(INTmed_scores).mean(), np.array(INTmed_scores).std())
+    print(NIE_scores)
+    print(np.array(NIE_scores).mean(), np.array(NIE_scores).std())
+
     print("my query:")
+    print(my_causal_query)
     print(
-        my_causal_query,
         np.array(my_causal_query).mean(),
         np.array(my_causal_query).std(),
     )
