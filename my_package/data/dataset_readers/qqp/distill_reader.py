@@ -85,7 +85,7 @@ class DistillQQPReader(DatasetReader):
                 label = "paraphrase" if doc["is_duplicate"] else "non-paraphrase"
                 premise = doc["sentence1"]
                 hypothesis = doc["sentence2"]
-                distill_probs = doc.get("bias_probs", None)
+                distill_probs = doc.get("distill_probs", None)
                 bias_prob = doc.get("bias_prob", None)
 
                 yield self.text_to_instance(premise, hypothesis, label, distill_probs, bias_prob)
