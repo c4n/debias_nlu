@@ -33,7 +33,7 @@ DEFAULT_CONFIG = {
 
     "EPOCHS": 12,
     "BATCH_SIZE": 64,
-    "LEARNING_RATE": 0.001
+    "LEARNING_RATE": 0.0001
 }
 
 
@@ -53,16 +53,19 @@ class CounterFactualModel(nn.Module):
     def __init__(self, n_labels: int = 1, init_c: Tuple[float] = None, fuse=DEFAULT_CONFIG["FUSE"]):
         super(CounterFactualModel, self).__init__()
         self.fuse = fuse
+        self.n_labels = n_labels
         if init_c:
             assert n_labels == len(init_c)
             self.c = nn.Parameter(torch.tensor(init_c))
         else:
             const = 1.0 / float(n_labels)
-            _init_c = const * np.ones(n_labels)
+            _init_c = const #* np.ones(n_labels)
             self.c = nn.Parameter(torch.tensor(_init_c))
 
     def forward(self, x):
-        x = self.fuse(self.c, x)
+        temp_ones = torch.ones(self.n_labels).detach()
+        temp_c = self.c * temp_ones
+        x = self.fuse(temp_c, x)
         return x
 
 

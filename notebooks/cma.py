@@ -104,15 +104,17 @@ def get_c(
         data_path, bias_val_pred_file), lines=True)
     bias_dev_score = [b for b in df_bias_dev[bias_probs_key]]
     bias_dev_score = np.array(bias_dev_score)
-    ya1x0_dev = fusion(bias_dev_score, x0)
+    # ya1x0_dev = fusion(bias_dev_score, x0)
     df_bert_dev = pd.read_json(
         os.path.join(model_path, model_val_pred_file), lines=True
     )
     ya1x1prob_dev = []
-    for p, h in zip(df_bert_dev[model_probs_key], ya1x0_dev):
+    for p, h in zip(df_bert_dev[model_probs_key], bias_dev_score):
         new_ya1x1 = fusion(np.array(p), h)
         ya1x1prob_dev.append(new_ya1x1)
     c = sharpness_correction(bias_dev_score, ya1x1prob_dev, config=config)
+    n_labels = bias_dev_score[0].shape[0]
+    c = c*np.ones(n_labels)
     print("c: ", c)
     print("softmax(c): ", softmax(c))
     return c
