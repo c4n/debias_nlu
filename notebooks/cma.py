@@ -23,9 +23,12 @@ BIAS_MODEL_DICT = {
     "fever_dev": "weighted_fever.dev.jsonl",
     "fever_sym1": "weighted_fever_symmetric_v0.1.test.jsonl",
     "fever_sym2": "weighted_fever_symmetric_v0.2.test.jsonl",
-    "qqp_train": "weighted_qqp.train.jsonl",
-    "qqp_dev": "weighted_qqp.dev.jsonl",
-    "qqp_paws": "weighted_paws.dev_and_test.jsonl",
+    # "weighted_qqp.train.jsonl",
+    "qqp_train": "qqp_train_overlap_only_bias_weighted.jsonl",
+    # "weighted_qqp.dev.jsonl",
+    "qqp_dev": "qqp_dev_overlap_only_bias_weighted.jsonl",
+    # "weighted_paws.dev_and_test.jsonl",
+    "qqp_paws": "paws_dev_and_test_overlap_only_bias_weighted.jsonl",
 }
 
 TASK2TRAIN_DICT = {"nli": "mnli_val", "fever": "fever_val", "qqp": "qqp_val"}
@@ -78,9 +81,9 @@ def get_bias_effect(
     if "nli" in test_set:
         return (nde[0], nie[0], tie[0], te[0])
     elif "fever" in test_set:
-        return (nde[0][2], nie[0][2], tie[2], te[0][2])
+        return (nde[2], nie[2], tie[2], te[2])
     elif "qqp" in test_set:
-        return (nde[0][1], nie[0][1], tie[1], te[0][1])
+        return (nde[1], nie[1], tie[1], te[1])
     raise NotImplementedError("Does not support test_set: %s" % test_set)
 
 
@@ -95,7 +98,10 @@ def get_c(
     model_probs_key: str = "probs",
     config: dict = ESTIMATE_C_DEFAULT_CONFIG,
 ) -> List[float]:
-    df_bias_dev = pd.read_json(os.path.join(data_path, bias_val_pred_file), lines=True)
+    print(os.path.join(
+        data_path, bias_val_pred_file))
+    df_bias_dev = pd.read_json(os.path.join(
+        data_path, bias_val_pred_file), lines=True)
     bias_dev_score = [b for b in df_bias_dev[bias_probs_key]]
     bias_dev_score = np.array(bias_dev_score)
     ya1x0_dev = fusion(bias_dev_score, x0)
@@ -150,8 +156,8 @@ def report_CMA(
         os.path.join(data_path, BIAS_MODEL_DICT[test_set]), lines=True
     )
     a1 = [b for b in df_bias_model[bias_probs_key]]  # prob for all classes
-    a1 = np.array(a1) # [N_batch, n_class]
-    n_labels = a1.shape[1] 
+    a1 = np.array(a1)  # [N_batch, n_class]
+    n_labels = a1.shape[1]
 
     # get a list of all seed dir
     if not seed_path:
@@ -211,7 +217,8 @@ def report_CMA(
 
         # get score of the model on a challenge set
         df_bert = pd.read_json(
-            os.path.join(seed_path[seed_idx], BERT_MODEL_RESULT_DICT[test_set]),
+            os.path.join(seed_path[seed_idx],
+                         BERT_MODEL_RESULT_DICT[test_set]),
             lines=True,
         )
 
@@ -261,7 +268,7 @@ def report_CMA(
         for i in range(len(labels)):
             ya1x1 = ya1x1prob[i]
             ya1x0 = ya1x0prob[i]
-           
+
             TE = ya1x1 - ya0x0
             NDE = ya1x0 - ya0x0
             ya0x1 = fusion(a0, np.array(x1[i]))
@@ -310,7 +317,8 @@ def report_CMA(
             all_INTmed.append((INTmed[0]))
 
             entropy = -sum(
-                df_bert["probs"][i] * np.log(df_bert["probs"][i]) / np.log(n_labels)
+                df_bert["probs"][i] *
+                np.log(df_bert["probs"][i]) / np.log(n_labels)
             )
             if entropy > entropy_threshold:
 
@@ -357,7 +365,7 @@ def report_CMA(
 
     print("TE:")
     print(np.array(TE_explain).mean(), np.array(TE_explain).std())
-    
+
     print("TIE:")
     print(np.array(TIE_explain).mean(), np.array(TIE_explain).std())
     print("TIE acc:")
@@ -386,5 +394,6 @@ def report_CMA(
     print(
         "my query F1:",
         my_causal_f1,
-        {"%s_mean_sd" % k: [np.mean(v), np.std(v)] for k, v in my_causal_f1.items()},
+        {"%s_mean_sd" % k: [np.mean(v), np.std(v)]
+         for k, v in my_causal_f1.items()},
     )
