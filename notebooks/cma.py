@@ -170,6 +170,7 @@ def report_CMA(
     TE_explain = []
     TIE_explain = []
     factual_scores = []
+    factual_f1 = {}
     TIE_scores = []
     TIE_f1 = {}
     NIE_explain = []
@@ -263,6 +264,7 @@ def report_CMA(
         all_NIE = []
         all_NDE = []
         all_INTmed = []
+        factual_y_preds = []
         tie_y_preds = []
         nie_y_preds = []
         intmed_y_preds = []
@@ -284,6 +286,7 @@ def report_CMA(
             # print(x1[i], factual_ans, labels[i])
             # print("df_bert.iloc[i]: ", df_bert.iloc[i])
             # print("df_bias_model.iloc[i]: ", df_bias_model.iloc[i])
+            factual_y_preds.append(factual_ans)
             factual_correct = factual_ans == labels[i]
             factual_pred_correct.append(factual_correct)
             # TIE
@@ -323,8 +326,8 @@ def report_CMA(
                 np.log(df_bert["probs"][i]) / np.log(n_labels)
             )
             if entropy > entropy_threshold:
-
                 cf_ans = np.argmax(np.array(x1[i] - a1[i]))
+                # cf_ans = np.argmax(np.array(x1[i]  - ya1x0))
                 cf_ans = get_ans(cf_ans, test_set)
                 assert type(cf_ans) == type(labels[i])
                 cf_correct = cf_ans == labels[i]
@@ -347,8 +350,8 @@ def report_CMA(
 
         # F1 score
         for x_f1, x_y_preds in zip(
-            [TIE_f1, NIE_f1, INTmed_f1, my_causal_f1],
-            [tie_y_preds, nie_y_preds, intmed_y_preds, my_causal_y_preds],
+            [factual_f1,TIE_f1, NIE_f1, INTmed_f1, my_causal_f1],
+            [factual_y_preds,tie_y_preds, nie_y_preds, intmed_y_preds, my_causal_y_preds],
         ):
             f1_scores = f1_score(
                 y_true=labels, y_pred=x_y_preds, average=None, labels=unique_labels
@@ -360,6 +363,10 @@ def report_CMA(
                     x_f1[label] = [
                         f1,
                     ]
+    # MACRO F1
+    factual_f1['MAF1']=np.array(list(factual_f1.values())).mean(axis=0)
+    TIE_f1['MAF1']=np.array(list(TIE_f1.values())).mean(axis=0)
+    my_causal_f1['MAF1']=np.array(list(my_causal_f1.values())).mean(axis=0)
 
     print("factual score:")
     print(factual_scores)
@@ -380,6 +387,8 @@ def report_CMA(
         TIE_f1,
         {"%s_mean_sd" % k: [np.mean(v), np.std(v)] for k, v in TIE_f1.items()},
     )
+    print(ASD(TIE_f1['MAF1'], factual_f1['MAF1']))
+    
     print("NIE:")
     print(np.array(NIE_explain).mean(), np.array(NIE_explain).std())
     print("NIE acc:")
@@ -399,3 +408,4 @@ def report_CMA(
         {"%s_mean_sd" % k: [np.mean(v), np.std(v)]
          for k, v in my_causal_f1.items()},
     )
+    print(ASD(my_causal_f1['MAF1'], factual_f1['MAF1']))
