@@ -25,11 +25,23 @@ def torch_sum_fuse(a: torch.Tensor, b: torch.Tensor):
     zsum = torch.sigmoid(zsum)
     return torch.log(zsum)
 
+def torch_mult_fuse(a: torch.Tensor, b: torch.Tensor):
+    smax = torch.nn.Softmax(dim=1)
+    return smax(torch.mul(a,b))
 
 ### Configs ###
 DEFAULT_CONFIG = {
     "N_LABELS": 3,
     "FUSE": torch_sum_fuse,
+
+    "EPOCHS": 12,
+    "BATCH_SIZE": 64,
+    "LEARNING_RATE": 0.0001
+}
+
+TE_CONFIG = {
+    "N_LABELS": 3,
+    "FUSE": torch_mult_fuse,
 
     "EPOCHS": 12,
     "BATCH_SIZE": 64,

@@ -9,7 +9,7 @@ from sklearn.metrics import f1_score
 from ASD import ASD
 import fuse
 import glob
-from kl_general import sharpness_correction, DEFAULT_CONFIG as ESTIMATE_C_DEFAULT_CONFIG
+from kl_general import sharpness_correction, TE_CONFIG as ESTIMATE_C_TE_CONFIG , DEFAULT_CONFIG as ESTIMATE_C_DEFAULT_CONFIG
 import pickle
 
 
@@ -120,6 +120,33 @@ def get_c(
     return c
 
 
+def get_c_te(
+    data_path: str,
+    model_path: str,
+    fusion: Callable[[PROB_T], PROB_T],
+    x0: PROB_T,
+    bias_val_pred_file: str = "dev_prob_korn_lr_overlapping_sample_weight_3class.jsonl",
+    model_val_pred_file: str = "raw_m.jsonl",
+    bias_probs_key: str = "bias_probs",
+    model_probs_key: str = "probs",
+    config: dict = ESTIMATE_C_TE_CONFIG,
+) -> List[float]:
+    print(os.path.join(
+        data_path, bias_val_pred_file))
+    df_bias_dev = pd.read_json(os.path.join(
+        data_path, bias_val_pred_file), lines=True)
+    bias_dev_score = [b for b in df_bias_dev[bias_probs_key]]
+    bias_dev_score = np.array(bias_dev_score)
+    # ya1x0_dev = fusion(bias_dev_score, x0)
+    df_bert_dev = pd.read_json(
+        os.path.join(model_path, model_val_pred_file), lines=True
+    )
+    c = sharpness_correction(bias_dev_score, df_bert_dev[model_probs_key], config=config)
+    n_labels = bias_dev_score[0].shape[0]
+    c = c*np.ones(n_labels)
+    print("te_c: ", c)
+    return c
+
 def _default_model_pred(
     _input: List[float] = [[0, 0, 0.41997876976119086]],
     _model_name: str = "mnli_lr_model.sav",
@@ -136,6 +163,7 @@ def report_CMA(
     fusion: Callable[[PROB_T], PROB_T] = fuse.sum_fuse,
     input_a0: List[float] = [[0, 0, 0.41997876976119086]],
     estimate_c_config: dict = ESTIMATE_C_DEFAULT_CONFIG,
+    estimate_c_te_config: dict = ESTIMATE_C_TE_CONFIG,
     correction: bool = False,
     bias_probs_key: str = "bias_probs",
     ground_truth_key: str = "gold_label",
@@ -202,7 +230,7 @@ def report_CMA(
         # x0 = np.average(train_pred_results, axis=0)
         # n_labels = x0.shape[0]
         x0 = (1/n_labels) * np.ones(n_labels)
-
+        te_correction = (1/n_labels) * np.ones(n_labels)
         if correction:
             x0 = get_c(
                 data_path=os.path.join(data_path, task),
@@ -214,6 +242,17 @@ def report_CMA(
                 bias_probs_key=bias_probs_key,
                 model_probs_key="probs",
                 config=estimate_c_config,
+            )
+            te_correction = get_c_te(
+                data_path=os.path.join(data_path, task),
+                model_path=seed_path[seed_idx],
+                fusion=fusion,
+                x0=te_correction,
+                bias_val_pred_file=bias_val_pred_file,
+                model_val_pred_file=model_val_pred_file,
+                bias_probs_key=bias_probs_key,
+                model_probs_key="probs",
+                config=estimate_c_te_config,
             )
         # fusion to create ya1x0
         ya1x0prob = fusion(a1, x0)
@@ -326,7 +365,7 @@ def report_CMA(
                 np.log(df_bert["probs"][i]) / np.log(n_labels)
             )
             if entropy > entropy_threshold:
-                cf_ans = np.argmax(np.array(x1[i] - a1[i]))
+                cf_ans = np.argmax(np.array(x1[i] - te_correction*a1[i]))
                 # cf_ans = np.argmax(np.array(x1[i]  - ya1x0))
                 cf_ans = get_ans(cf_ans, test_set)
                 assert type(cf_ans) == type(labels[i])
