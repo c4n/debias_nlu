@@ -172,6 +172,7 @@ def report_CMA(
     model_val_pred_file: str = "raw_m.jsonl",
     entropy_threshold: float = -9999,
     seed_path: List[str] = None,
+    return_raw = False
 ) -> None:
     """
     Arguments:
@@ -210,6 +211,10 @@ def report_CMA(
     my_causal_query = []
     my_causal_f1 = {}
 
+    # store raw pred/ TIE
+    raw_factual_correct = []
+    raw_TIE = []
+
     # get avg score
     for seed_idx in range(len(seed_path)):
         print(
@@ -230,7 +235,7 @@ def report_CMA(
         # x0 = np.average(train_pred_results, axis=0)
         # n_labels = x0.shape[0]
         x0 = (1/n_labels) * np.ones(n_labels)
-        te_correction = (1/n_labels) * np.ones(n_labels)
+        te_correction =  np.ones(n_labels)
         if correction:
             x0 = get_c(
                 data_path=os.path.join(data_path, task),
@@ -243,6 +248,7 @@ def report_CMA(
                 model_probs_key="probs",
                 config=estimate_c_config,
             )
+            te_correction = (1/n_labels) * np.ones(n_labels)
             te_correction = get_c_te(
                 data_path=os.path.join(data_path, task),
                 model_path=seed_path[seed_idx],
@@ -360,13 +366,14 @@ def report_CMA(
             all_TE.append(bias_te)
             all_INTmed.append((INTmed[0]))
 
+
             entropy = -sum(
                 df_bert["probs"][i] *
                 np.log(df_bert["probs"][i]) / np.log(n_labels)
             )
             if entropy > entropy_threshold:
                 cf_ans = np.argmax(np.array(x1[i] - te_correction*a1[i]))
-                # cf_ans = np.argmax(np.array(x1[i]  - ya1x0))
+                # cf_ans = np.argmax(np.array(x1[i]  - a1[i]))
                 cf_ans = get_ans(cf_ans, test_set)
                 assert type(cf_ans) == type(labels[i])
                 cf_correct = cf_ans == labels[i]
@@ -386,6 +393,11 @@ def report_CMA(
         INTmed_explain.append(np.array(all_INTmed).mean())
         INTmed_scores.append(sum(INTmed_pred_correct) / total_sample)
         my_causal_query.append(sum(pred_correct) / total_sample)
+
+        # save data for analysis
+        raw_factual_correct.append(factual_pred_correct)
+        raw_TIE.append(all_TIE)          
+
 
         # F1 score
         for x_f1, x_y_preds in zip(
@@ -426,6 +438,11 @@ def report_CMA(
         TIE_f1,
         {"%s_mean_sd" % k: [np.mean(v), np.std(v)] for k, v in TIE_f1.items()},
     )
+    print('checking ASD.......')
+    print('TIE_MAF1:')
+    print(TIE_f1['MAF1'])
+    print('factual_MAF1:')
+    print(factual_f1['MAF1'])
     print(ASD(TIE_f1['MAF1'], factual_f1['MAF1']))
     
     print("NIE:")
@@ -448,3 +465,7 @@ def report_CMA(
          for k, v in my_causal_f1.items()},
     )
     print(ASD(my_causal_f1['MAF1'], factual_f1['MAF1']))
+    
+    if return_raw:
+        # Return raw values
+        return raw_factual_correct, raw_TIE
