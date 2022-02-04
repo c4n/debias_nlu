@@ -464,6 +464,11 @@ def report_CMA(
         {"%s_mean_sd" % k: [np.mean(v), np.std(v)]
          for k, v in my_causal_f1.items()},
     )
+    print('checking ASD.......')
+    print('my_causal_MAF1:')
+    print(my_causal_f1['MAF1'])
+    print('factual_MAF1:')
+    print(factual_f1['MAF1'])
     print(ASD(my_causal_f1['MAF1'], factual_f1['MAF1']))
     
     if return_raw:
