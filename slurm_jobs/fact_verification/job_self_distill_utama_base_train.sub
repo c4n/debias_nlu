@@ -14,11 +14,12 @@
 # module load cuDNN/7
 # module load HDF5
 
-MODEL_DIR=${1:-results/outputs_fever_bert_base_1}
-BATCH_SIZE=${2:-64}
-N_DISTIL=${3:-0} # Real distil = N_DISTIL + 1
+ORG_MODEL_DIR=${1:-results/fever/baseline_lr2e5/outputs_fever_bert_base_1}
+DISTILLED_MODEL_DIR=${2:-results/fever/self_distill_lr2e5/outputs_fever_self_distill_bert_1}
+BATCH_SIZE=${3:-64}
+N_DISTIL=${4:-0} # Real distil = N_DISTIL + 1
 
-WEIGHTED_TRAINING_SET=${4:-data/fact_verification/weighted_fever.train.jsonl}
+WEIGHTED_TRAINING_SET=${5:-data/fact_verification/weighted_fever.train.jsonl}
 CONFIG=${6:-configs/fact_verification/fever_utama_distill_bert_1.jsonnet}
 
 
@@ -30,8 +31,8 @@ python3 -c "import torch; print('# Visible GPUs: ', torch.cuda.device_count());"
 seeds=( 2 3 4 5 6 )
 for seed in "${seeds[@]}"
 do
-    model_dir="${MODEL_DIR}_seed${seed}3370"
-    SUB_MODEL_DIR="${model_dir}/utama_distil"
+    model_dir="${ORG_MODEL_DIR}_seed${seed}3370"
+    SUB_MODEL_DIR="${DISTILLED_MODEL_DIR}_seed${seed}3370"
     mkdir -p $SUB_MODEL_DIR
     ## Train Model
     # Predict
@@ -39,7 +40,7 @@ do
     allennlp predict \
         $model_dir/model.tar.gz \
         $WEIGHTED_TRAINING_SET \
-        --output-file $SUB_MODEL_DIR/raw_train_result_0.jsonl \
+        --output-file ${model_dir}/raw_train_result_0.jsonl \
         --batch-size $BATCH_SIZE \
         --cuda-device 0 \
         --predictor vanilla_textual_entailment \
@@ -53,14 +54,14 @@ do
         ## Generate Training Set with Soft Target
         python utils/create_distill_train_set.py \
             -t $WEIGHTED_TRAINING_SET \
-            -p $SUB_MODEL_DIR/raw_train_result_${i}.jsonl \
-            -o $SUB_MODEL_DIR/utama_distill_output_${i}.jsonl 
+            -p ${model_dir}/raw_train_result_${i}.jsonl \
+            -o ${model_dir}/utama_distill_output_${i}.jsonl 
         ## Train a distilled model
         allennlp train \
             $CONFIG \
-            -s $SUB_MODEL_DIR/utama_distill_model_${i} \
+            -s $SUB_MODEL_DIR \
             --include-package my_package \
-            --overrides '{"train_data_path": "'"${SUB_MODEL_DIR}/utama_distill_output_${i}.jsonl"'",}'
+            --overrides '{"train_data_path": "'"${model_dir}/utama_distill_output_${i}.jsonl"'",}'
     done
 done
 

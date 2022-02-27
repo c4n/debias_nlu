@@ -18,7 +18,7 @@ module load HDF5
 TRANSFORMERS_OFFLINE=1
 HF_DATASETS_OFFLINE=1
 
-RESULT_DIR=${1:-results/outputs_fever_weighted_bert_1}
+RESULT_DIR=${1:-results/fever/reweight_lr2e5/outputs_fever_weighted_bert_1}
 
 cd ~/debias_nlu
 source ~/CI_env/bin/activate

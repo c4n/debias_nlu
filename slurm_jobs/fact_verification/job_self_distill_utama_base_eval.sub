@@ -18,8 +18,8 @@ module load HDF5
 TRANSFORMERS_OFFLINE=1
 HF_DATASETS_OFFLINE=1
 
-MODEL_DIR=${1:-results/outputs_fever_bert_base_1}
-I_DISTILL=${2:-0}
+MODEL_DIR=${1:-results/fever/self_distill_lr2e5/outputs_fever_self_distill_bert_1}
+I_DISTILL=${3:-0}
 
 
 cd ~/debias_nlu
@@ -30,21 +30,20 @@ python3 -c "import torch; print('# Visible GPUs: ', torch.cuda.device_count());"
 seeds=( 2 3 4 5 6 )
 for seed in "${seeds[@]}"
 do
-    SUB_MODEL_DIR="${MODEL_DIR}_seed${seed}3370/utama_distil"
-    RESULT_DIR="$SUB_MODEL_DIR/utama_distill_model_$I_DISTILL"
+    RESULT_DIR="${MODEL_DIR}_seed${seed}3370"
 
-    allennlp evaluate $RESULT_DIR/model.tar.gz\
+    allennlp evaluate ${RESULT_DIR}/model.tar.gz\
         data/fact_verification/fever.dev.jsonl\
-        --output-file $RESULT_DIR/metrics_dev.json\
+        --output-file ${RESULT_DIR}/metrics_dev.json\
         --include-package my_package
 
-    allennlp evaluate $RESULT_DIR/model.tar.gz\
+    allennlp evaluate ${RESULT_DIR}/model.tar.gz\
         data/fact_verification/fever_symmetric_v0.1.test.jsonl\
-        --output-file $RESULT_DIR/metrics_test_v0.1.json\
+        --output-file ${RESULT_DIR}/metrics_test_v0.1.json\
         --include-package my_package
 
-    allennlp evaluate $RESULT_DIR/model.tar.gz\
+    allennlp evaluate ${RESULT_DIR}/model.tar.gz\
         data/fact_verification/fever_symmetric_v0.2.test.jsonl\
-        --output-file $RESULT_DIR/metrics_test_v0.2.json\
+        --output-file ${RESULT_DIR}/metrics_test_v0.2.json\
         --include-package my_package
 done
