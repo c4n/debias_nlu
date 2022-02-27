@@ -25,16 +25,18 @@ def torch_sum_fuse(a: torch.Tensor, b: torch.Tensor):
     zsum = torch.sigmoid(zsum)
     return torch.log(zsum)
 
+
 def torch_mult_fuse(a: torch.Tensor, b: torch.Tensor):
     smax = torch.nn.Softmax(dim=1)
-    return smax(torch.mul(a,b))
+    return smax(torch.mul(a, b))
+
 
 ### Configs ###
 DEFAULT_CONFIG = {
     "N_LABELS": 3,
     "FUSE": torch_sum_fuse,
 
-    "EPOCHS": 12,
+    "EPOCHS": 16,
     "BATCH_SIZE": 64,
     "LEARNING_RATE": 0.0001
 }
@@ -43,7 +45,7 @@ TE_CONFIG = {
     "N_LABELS": 3,
     "FUSE": torch_mult_fuse,
 
-    "EPOCHS": 12,
+    "EPOCHS": 16,
     "BATCH_SIZE": 64,
     "LEARNING_RATE": 0.0001
 }
@@ -71,7 +73,7 @@ class CounterFactualModel(nn.Module):
             self.c = nn.Parameter(torch.tensor(init_c))
         else:
             const = 1.0 / float(n_labels)
-            _init_c = const #* np.ones(n_labels)
+            _init_c = const  # * np.ones(n_labels)
             self.c = nn.Parameter(torch.tensor(_init_c))
 
     def forward(self, x):
