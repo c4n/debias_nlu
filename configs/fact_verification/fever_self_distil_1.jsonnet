@@ -58,7 +58,7 @@ local transformer_dim = 768;
     },
     "optimizer": {
       "type": "huggingface_adamw",
-      "lr": 5e-5,
+      "lr": 2e-5,
       "weight_decay": 0.1,
     },
     "use_amp": true,
