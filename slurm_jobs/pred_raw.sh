@@ -9,13 +9,12 @@ DATASET=${1:-fact_verification}
 #     "results/outputs_qqp_poe_bert_1"
 # )
 # MODEL_PATHS=(
-#     "results/outputs_fever_bert_base_1"
-#     "results/outputs_fever_weighted_bert_1"
-#     "results/outputs_fever_poe_bert_1"
+#     "results/fever/baseline_lr2e5/outputs_fever_bert_base_1"
+#     "results/fever/reweight_lr2e5/outputs_fever_weighted_bert_1"
+#     "results/fever/poe_lr2e5/outputs_fever_poe_bert_1"
 # )
 MODEL_PATHS=(
-    "results/outputs_fever_weighted_bert_1"
-    "results/outputs_fever_poe_bert_1"
+    "results/fever/self_distill_lr2e5/outputs_fever_self_distill_bert_1"
 )
 
 SEEDs=( 2 3 4 5 6 )
