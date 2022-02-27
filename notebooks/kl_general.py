@@ -34,7 +34,7 @@ DEFAULT_CONFIG = {
     "N_LABELS": 3,
     "FUSE": torch_sum_fuse,
 
-    "EPOCHS": 12,
+    "EPOCHS": 16,
     "BATCH_SIZE": 64,
     "LEARNING_RATE": 0.0001
 }
@@ -43,7 +43,7 @@ TE_CONFIG = {
     "N_LABELS": 3,
     "FUSE": torch_mult_fuse,
 
-    "EPOCHS": 12,
+    "EPOCHS": 16,
     "BATCH_SIZE": 64,
     "LEARNING_RATE": 0.0001
 }
