@@ -17,9 +17,9 @@ local transformer_dim = 768;
       }
     }
   },
-  "train_data_path": "/ist/users/canu/debias_nlu/data/nli/korn_full_lr_sample_weight.jsonl",
-  "validation_data_path": "/ist/users/canu/debias_nlu/data/nli/multinli_1.0_dev_matched.jsonl",
-  "test_data_path": "/ist/users/canu/debias_nlu/data/nli/multinli_1.0_dev_mismatched.jsonl",
+  "train_data_path": "korn_full_lr_overlapping_sample_weight_ps3class.jsonl",
+  "validation_data_path": "data/nli/multinli_1.0_dev_matched.jsonl",
+  "test_data_path": "data/nli/multinli_1.0_dev_mismatched.jsonl",
   "model": {
     "type": "sample_weight_basic_classifier",
     "text_field_embedder": {
