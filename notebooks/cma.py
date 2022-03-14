@@ -222,18 +222,6 @@ def report_CMA(
                 seed_path[seed_idx], BERT_MODEL_RESULT_DICT[TASK2TRAIN_DICT[task]]
             )
         )
-        # df_val = pd.read_json(
-        #     os.path.join(
-        #         seed_path[seed_idx], BERT_MODEL_RESULT_DICT[TASK2TRAIN_DICT[task]]
-        #     ),
-        #     lines=True,
-        # )
-        # list_probs = []
-        # for i in df_val["probs"]:
-        #     list_probs.append(i)
-        # train_pred_results = np.array(list_probs)
-        # x0 = np.average(train_pred_results, axis=0)
-        # n_labels = x0.shape[0]
         x0 = (1/n_labels) * np.ones(n_labels)
         te_correction =  np.ones(n_labels)
         if correction:
