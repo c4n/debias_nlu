@@ -22,7 +22,7 @@ BIAS_MODEL_DICT = {
     "fever_train": "weighted_fever.train.jsonl",
     "fever_dev": "weighted_fever.dev.jsonl",
     "fever_sym1": "weighted_fever_symmetric_v0.1.test.jsonl",
-    "fever_sym2": "weighted_fever_symmetric_v0.2.test.jsonl",,
+    "fever_sym2": "weighted_fever_symmetric_v0.2.test.jsonl",
     "qqp_train": "qqp_train_overlap_only_bias_weighted.jsonl",
     "qqp_dev": "qqp_dev_overlap_only_bias_weighted.jsonl",
     "qqp_paws": "paws_dev_and_test_overlap_only_bias_weighted.jsonl",
@@ -167,7 +167,6 @@ def report_CMA(
     model_pred_method: Callable[[List[float]], List[float]] = _default_model_pred,
     bias_val_pred_file: str = "dev_prob_korn_lr_overlapping_sample_weight_3class.jsonl",
     model_val_pred_file: str = "raw_m.jsonl",
-    entropy_threshold: float = -9999,
     seed_path: List[str] = None,
     return_raw = False
 ) -> None:
@@ -351,14 +350,13 @@ def report_CMA(
                 df_bert["probs"][i] *
                 np.log(df_bert["probs"][i]) / np.log(n_labels)
             )
-            if entropy > entropy_threshold:
-                cf_ans = np.argmax(np.array(x1[i] - te_correction*a1[i]))
-                cf_ans = get_ans(cf_ans, test_set)
-                assert type(cf_ans) == type(labels[i])
-                cf_correct = cf_ans == labels[i]
-            else:
-                assert type(factual_ans) == type(labels[i])
-                cf_correct = factual_ans == labels[i]
+    
+            # TE_model
+            cf_ans = np.argmax(np.array(x1[i] - te_correction*a1[i]))
+            cf_ans = get_ans(cf_ans, test_set)
+            assert type(cf_ans) == type(labels[i])
+            cf_correct = cf_ans == labels[i]
+
             my_causal_y_preds.append(cf_ans)
             pred_correct.append(cf_correct)
 
