@@ -1,0 +1,35 @@
+#!/bin/bash -l
+#SBATCH --job-name=overlap_ps
+#SBATCH --output=overlap_ps
+#SBATCH --partition=scads
+#SBATCH --account=scads
+#SBATCH --gres=gpu:1
+#SBATCH --mem=32gb
+#SBATCH --time=72:00:00
+
+source activate mnli
+
+allennlp train configs/nli/propensity_score/overlapping_ps.jsonnet \
+-s /raid/can/nli_models/korn_overlapping/outputs_bert_base_overlapping_korn_full_ps3class_1/ \
+--include-package my_package \
+--overrides '{ "random_seed": 13370, "numpy_seed": 1337, "pytorch_seed": 133}'
+
+allennlp train configs/nli/propensity_score/overlapping_ps.jsonnet \
+-s /raid/can/nli_models/korn_overlapping/outputs_bert_base_overlapping_korn_full_ps3class_2/ \
+--include-package my_package \
+--overrides '{ "random_seed": 23370, "numpy_seed": 2337, "pytorch_seed": 233}'
+
+allennlp train configs/nli/propensity_score/overlapping_ps.jsonnet \
+-s /raid/can/nli_models/korn_overlapping/outputs_bert_base_overlapping_korn_full_ps3class_3/ \
+--include-package my_package \
+--overrides '{ "random_seed": 33370, "numpy_seed": 3337, "pytorch_seed": 333}'
+
+allennlp train configs/nli/propensity_score/overlapping_ps.jsonnet \
+-s /raid/can/nli_models/korn_overlapping/outputs_bert_base_overlapping_korn_full_ps3class_4/ \
+--include-package my_package \
+--overrides '{ "random_seed": 43370, "numpy_seed": 4337, "pytorch_seed": 433}'
+
+allennlp train configs/nli/propensity_score/overlapping_ps.jsonnet \
+-s /raid/can/nli_models/korn_overlapping/outputs_bert_base_overlapping_korn_full_ps3class_5/ \
+--include-package my_package \
+--overrides '{ "random_seed": 53370, "numpy_seed": 5337, "pytorch_seed": 533}'

@@ -3,7 +3,7 @@ local transformer_dim = 768;
 
 {
   "dataset_reader": {
-    "type": "distill_snli",
+    "type": "weighted_overlap_snli",
     "tokenizer": {
       "type": "pretrained_transformer",
       "model_name": transformer_model,
@@ -17,11 +17,11 @@ local transformer_dim = 768;
       }
     }
   },
-  "train_data_path": "/ist/users/canu/debias_nlu/data/nli/multinli_1.0_train.jsonl",
-  "validation_data_path": "/ist/users/canu/debias_nlu/data/nli/multinli_1.0_dev_matched.jsonl",
-  "test_data_path": "/ist/users/canu/debias_nlu/data/nli/multinli_1.0_dev_mismatched.jsonl",
+  "train_data_path": "korn_full_lr_overlapping_sample_weight_ps3class.jsonl",
+  "validation_data_path": "data/nli/multinli_1.0_dev_matched.jsonl",
+  "test_data_path": "data/nli/multinli_1.0_dev_mismatched.jsonl",
   "model": {
-    "type": "weighted_distill_basic_classifier",
+    "type": "sample_weight_basic_classifier",
     "text_field_embedder": {
       "token_embedders": {
         "tokens": {
