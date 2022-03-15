@@ -23,11 +23,8 @@ BIAS_MODEL_DICT = {
     "fever_dev": "weighted_fever.dev.jsonl",
     "fever_sym1": "weighted_fever_symmetric_v0.1.test.jsonl",
     "fever_sym2": "weighted_fever_symmetric_v0.2.test.jsonl",
-    # "weighted_qqp.train.jsonl",
     "qqp_train": "qqp_train_overlap_only_bias_weighted.jsonl",
-    # "weighted_qqp.dev.jsonl",
     "qqp_dev": "qqp_dev_overlap_only_bias_weighted.jsonl",
-    # "weighted_paws.dev_and_test.jsonl",
     "qqp_paws": "paws_dev_and_test_overlap_only_bias_weighted.jsonl",
 }
 
@@ -170,7 +167,6 @@ def report_CMA(
     model_pred_method: Callable[[List[float]], List[float]] = _default_model_pred,
     bias_val_pred_file: str = "dev_prob_korn_lr_overlapping_sample_weight_3class.jsonl",
     model_val_pred_file: str = "raw_m.jsonl",
-    entropy_threshold: float = -9999,
     seed_path: List[str] = None,
     return_raw = False
 ) -> None:
@@ -280,10 +276,7 @@ def report_CMA(
             # no ground truth
             offset = df_bias_model[ground_truth_key].value_counts()["-"]
         # CMA
-        # a0 = model_pred_method(_input=input_a0)  # input_a0?
         a0 = (1/n_labels) * np.ones(n_labels)
-        # print("input_a0: ", input_a0)
-        # print("a0: ", a0)
         ya0x0 = fusion(a0, x0)
         # to measure accuracy
         factual_pred_correct = []
@@ -316,9 +309,7 @@ def report_CMA(
             factual_ans = np.argmax(x1[i])
             factual_ans = get_ans(factual_ans, test_set)
             assert type(factual_ans) == type(labels[i])
-            # print(x1[i], factual_ans, labels[i])
-            # print("df_bert.iloc[i]: ", df_bert.iloc[i])
-            # print("df_bias_model.iloc[i]: ", df_bias_model.iloc[i])
+
             factual_y_preds.append(factual_ans)
             factual_correct = factual_ans == labels[i]
             factual_pred_correct.append(factual_correct)
@@ -359,15 +350,13 @@ def report_CMA(
                 df_bert["probs"][i] *
                 np.log(df_bert["probs"][i]) / np.log(n_labels)
             )
-            if entropy > entropy_threshold:
-                cf_ans = np.argmax(np.array(x1[i] - te_correction*a1[i]))
-                # cf_ans = np.argmax(np.array(x1[i]  - a1[i]))
-                cf_ans = get_ans(cf_ans, test_set)
-                assert type(cf_ans) == type(labels[i])
-                cf_correct = cf_ans == labels[i]
-            else:
-                assert type(factual_ans) == type(labels[i])
-                cf_correct = factual_ans == labels[i]
+    
+            # TE_model
+            cf_ans = np.argmax(np.array(x1[i] - te_correction*a1[i]))
+            cf_ans = get_ans(cf_ans, test_set)
+            assert type(cf_ans) == type(labels[i])
+            cf_correct = cf_ans == labels[i]
+
             my_causal_y_preds.append(cf_ans)
             pred_correct.append(cf_correct)
 
@@ -433,13 +422,8 @@ def report_CMA(
     print(factual_f1['MAF1'])
     print(ASD(TIE_f1['MAF1'], factual_f1['MAF1']))
     
-    print("NIE:")
-    print(np.array(NIE_explain).mean(), np.array(NIE_explain).std())
-    print("NIE acc:")
-    print(NIE_scores)
-    print(np.array(NIE_scores).mean(), np.array(NIE_scores).std())
 
-    print("my query:")
+    print("TE_model:")
     print(my_causal_query)
     print(
         np.array(my_causal_query).mean(),
@@ -447,13 +431,13 @@ def report_CMA(
     )
     print(ASD(my_causal_query, factual_scores))
     print(
-        "my query F1:",
+        "TE_model F1:",
         my_causal_f1,
         {"%s_mean_sd" % k: [np.mean(v), np.std(v)]
          for k, v in my_causal_f1.items()},
     )
     print('checking ASD.......')
-    print('my_causal_MAF1:')
+    print('TE_model_MAF1:')
     print(my_causal_f1['MAF1'])
     print('factual_MAF1:')
     print(factual_f1['MAF1'])
