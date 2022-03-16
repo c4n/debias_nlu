@@ -70,6 +70,9 @@ SAVED_MODEL_PATH = "../results/fever/bias_model"
 
 In addition, the example process of loading bias model is also contains in "notebooks/Bias_Model_FEVER.ipynb".
 
+#### QQP
+- Create features for training the bias model. The example in "notebooks/qqp_features_extraction.ipynb".
+- Training the bias model. The example in "notebooks/qqp_feature_classification_using_MaxEnt.ipynb".
 
 
 #### How to train a main model  [Can*,Jab*, Korn*]  (which file to run, outputfile name)
