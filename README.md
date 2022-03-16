@@ -43,7 +43,7 @@ allennlp evaluate_mult ${MNLI_PARAMS[@]}
 ### Steps for running CMA [Can]
 ### How to get the files ready?
 
-### Training and load bias model
+### Training and load a bias model
 
 #### MNLI
 - Create features for training the bias model. The example in "notebooks/Build_features_extraction.ipynb".
@@ -74,7 +74,8 @@ In addition, the example process of loading bias model is also contains in "note
 
 #### How to train a main model  [Can*,Jab*, Korn*]  (which file to run, outputfile name)
 #### How to load a trained main model [Can, Jab]
-#### How to load model from a huggingface  [Korn]
+### How to load model from a huggingface  [Korn]
+For example in "notebooks/huggingface-model-predict-mnli-tutorial.ipynb"
         
 ### Getting predictions:
 #### Get predictions from bias models [Jab,Korn] + jsonl files
