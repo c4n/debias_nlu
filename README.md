@@ -43,6 +43,21 @@ allennlp evaluate_mult ${MNLI_PARAMS[@]}
 ### Steps for running CMA [Can]
 #### How to get the files ready?
 #### How to train a bias model?  [Jab*, Korn*]  (which file to run, outputfile name)
+Firstly, we need to make sure that the dataset is well placed in the relative path "data/fact_verification". For convenient, you can run the "download.sh" and "preprocess.sh" scripts in the path "data/fact_verification" to get a FEVER dataset. In order to train the bias model for FEVER dataset, you can configure the following parameters in "notebooks/Bias_Model_FEVER.ipynb" file. Then we run all the python script in this file for training the bias model and save it into your pointed path.
+
+DUMMY_PREFIX = "" # "sample_" for few samples and "" for the real one
+
+TRAIN_DATA_FILE = "../data/fact_verification/%sfever.train.jsonl"%DUMMY_PREFIX
+VAL_DATA_FILE = "../data/fact_verification/%sfever.val.jsonl"%DUMMY_PREFIX
+DEV_DATA_FILE = "../data/fact_verification/%sfever.dev.jsonl"%DUMMY_PREFIX
+TEST_DATA_FILE = "../data/fact_verification/fever_symmetric_v0.1.test.jsonl"
+
+WEIGHT_KEY = "sample_weight"
+OUTPUT_VAL_DATA_FILE = "../data/fact_verification/%sweighted_fever.val.jsonl"%DUMMY_PREFIX
+OUTPUT_TRAIN_DATA_FILE = "../data/fact_verification/%sweighted_fever.train.jsonl"%DUMMY_PREFIX
+SAVED_MODEL_PATH = "../results/fever/bias_model"
+In addition, the example process of loading bias model is also contains in "notebooks/Bias_Model_FEVER.ipynb".
+
 #### How to load a trained bias model (example) [Jab, Korn]
 #### How to train a main model  [Can*,Jab*, Korn*]  (which file to run, outputfile name)
 #### How to load a trained main model [Can, Jab]
@@ -63,6 +78,7 @@ allennlp evaluate_mult ${MNLI_PARAMS[@]}
 #### Sharpness control (need predictions on valset for both models) [Can]
 #### TIE_A [Can]
 #### TE_model [Can]
+
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
