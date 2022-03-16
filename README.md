@@ -48,7 +48,28 @@ python evaluate_heur_output.py $MODEL_DIR/hans_predictions.out > $MODEL_DIR/hans
 
 ## In Details
 
-to do.....
+1. Steps for running CMA [Can]<br/>
+    a. How to get the files ready? <br/>
+    b. How to train a bias model?  [Jab*, Korn*]  (which file to run, outputfile name)<br/>
+    c. How to load a trained bias model (example) [Jab, Korn] <br/>
+    d. How to train a main model  [Can*,Jab*, Korn*]  (which file to run, outputfile name)<br/>
+    e. How to load a trained main model [Can, Jab]<br/>
+    f. How to load model from a huggingface  [Korn] <br/>
+2. Getting predictions:<br/>
+    a. Get predictions from bias models [Jab,Korn] + jsonl files<br/>
+        i. Jsonl train*<br/>
+        ii. Jsonl dev<br/>
+        iii. Jsonl test<br/>
+        iv. Jsonl challenge set<br/>
+    b. Get prediction from main models [Can, Jab] + jsonl files<br/>
+        i. Slurm files for getting raw pred<br/>
+        ii. Raw val set<br/>
+        iii. Raw test set<br/>
+        iv. Raw challenge set<br/>
+4. Apply CMA [Can]<br/>
+    a. Sharpness control (need predictions on valset for both models) [Can]<br/>
+    b. TIE_A [Can]<br/>
+    c. TE_model [Can]<br/>
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
