@@ -37,39 +37,53 @@ MNLI_PARAMS=($MODEL_DIR/model.tar.gz
 allennlp evaluate_mult ${MNLI_PARAMS[@]}
 ```
 
-For HANS , we use evaluate_heur_output.py script  from [tommccoy1/hans](https://github.com/tommccoy1/hans) to evaluate a model's predictions. Here's an example with our counterfactual predictor:
-
-```shell
-allennlp cf_predict $MODEL_DIR/model.tar.gz data/nli/heuristics_evaluation_set_sample_weight.jsonl --output-file $MODEL_DIR/hans_predictions.jsonl --batch-size 64 --cuda-device 0 --cf_type counterfactual_snli --cf_weight  0.3745401188473625 --predictor cf_textual_entailment_reweighted --include-package my_package
-cd utils/
-python hans_parser.py -i $MODEL_DIR/hans_predictions.jsonl -o $MODEL_DIR/hans_predictions.out
-python evaluate_heur_output.py $MODEL_DIR/hans_predictions.out > $MODEL_DIR/hans_result.txt
-```
 
 ## In Details
 
-1. Steps for running CMA [Can]<br/>
-    a. How to get the files ready? <br/>
-    b. How to train a bias model?  [Jab*, Korn*]  (which file to run, outputfile name)<br/>
-    c. How to load a trained bias model (example) [Jab, Korn] <br/>
-    d. How to train a main model  [Can*,Jab*, Korn*]  (which file to run, outputfile name)<br/>
-    e. How to load a trained main model [Can, Jab]<br/>
-    f. How to load model from a huggingface  [Korn] <br/>
-2. Getting predictions:<br/>
-    a. Get predictions from bias models [Jab,Korn] + jsonl files<br/>
-        i. Jsonl train*<br/>
-        ii. Jsonl dev<br/>
-        iii. Jsonl test<br/>
-        iv. Jsonl challenge set<br/>
-    b. Get prediction from main models [Can, Jab] + jsonl files<br/>
-        i. Slurm files for getting raw pred<br/>
-        ii. Raw val set<br/>
-        iii. Raw test set<br/>
-        iv. Raw challenge set<br/>
-4. Apply CMA [Can]<br/>
-    a. Sharpness control (need predictions on valset for both models) [Can]<br/>
-    b. TIE_A [Can]<br/>
-    c. TE_model [Can]<br/>
+### Steps for running CMA [Can]
+### How to get the files ready?
+### How to train a bias model?  [Jab*, Korn*]  (which file to run, outputfile name)
+Firstly, we need to make sure that the dataset is well placed in the relative path "data/fact_verification". For convenient, you can run the "download.sh" and "preprocess.sh" scripts in the path "data/fact_verification" to get a FEVER dataset. In order to train the bias model for FEVER dataset, you can configure the following parameters in "notebooks/Bias_Model_FEVER.ipynb" file. Then we run all the python script in this file for training the bias model and save it into your pointed path.
+
+```bash
+DUMMY_PREFIX = "" # "sample_" for few samples and "" for the real one
+
+TRAIN_DATA_FILE = "../data/fact_verification/%sfever.train.jsonl"%DUMMY_PREFIX
+VAL_DATA_FILE = "../data/fact_verification/%sfever.val.jsonl"%DUMMY_PREFIX
+DEV_DATA_FILE = "../data/fact_verification/%sfever.dev.jsonl"%DUMMY_PREFIX
+TEST_DATA_FILE = "../data/fact_verification/fever_symmetric_v0.1.test.jsonl"
+```
+
+```bash
+WEIGHT_KEY = "sample_weight"
+OUTPUT_VAL_DATA_FILE = "../data/fact_verification/%sweighted_fever.val.jsonl"%DUMMY_PREFIX
+OUTPUT_TRAIN_DATA_FILE = "../data/fact_verification/%sweighted_fever.train.jsonl"%DUMMY_PREFIX
+SAVED_MODEL_PATH = "../results/fever/bias_model"
+```
+
+In addition, the example process of loading bias model is also contains in "notebooks/Bias_Model_FEVER.ipynb".
+
+#### How to load a trained bias model (example) [Jab, Korn]
+#### How to train a main model  [Can*,Jab*, Korn*]  (which file to run, outputfile name)
+#### How to load a trained main model [Can, Jab]
+#### How to load model from a huggingface  [Korn]
+        
+### Getting predictions:
+#### Get predictions from bias models [Jab,Korn] + jsonl files
+##### Jsonl train*
+##### Jsonl dev
+##### Jsonl test
+##### Jsonl challenge set
+#### Get prediction from main models [Can, Jab] + jsonl files
+##### Slurm files for getting raw pred
+##### Raw val set
+##### Raw test set
+##### Raw challenge set
+### Apply CMA [Can]
+#### Sharpness control (need predictions on valset for both models) [Can]
+#### TIE_A [Can]
+#### TE_model [Can]
+
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
