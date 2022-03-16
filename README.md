@@ -76,10 +76,10 @@ In addition, the example process of loading bias model is also contains in "note
 
 #### QQP
 - Create features for training the bias model. The example in "notebooks/qqp_features_extraction.ipynb".
-- Training the bias model. The example in "notebooks/qqp_feature_classification_using_MaxEnt.ipynb".
+- To train the bias model used in the paper, see: "notebooks/qqp_feature_classification_using_MaxEnt.ipynb".
 
 
-## How to train a main model  [Can*,Jab*, Korn*]  (which file to run, outputfile name)
+## How to train a main model
 
 Once you have the scripts and the dataset available on your local machine, the training process of the main model could be execute via the following running template.
 
@@ -94,7 +94,7 @@ bash slurm_jobs/fact_verification/job_bert_base_train.sub
 ```
 
 
-## How to load a trained main model [Can, Jab]
+## How to evaluate a main model
 
 Simialar to training, to evaluate the trained model on the testset, we could do it by executing the following command.
 
