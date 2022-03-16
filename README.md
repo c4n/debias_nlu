@@ -1,6 +1,12 @@
 # Mitigating Spurious Correlation in Natural Language Inference using Causal Inference
 
 This GitHub repo contains codes and scripts for the paper xxxx.
+### Counterfactual Inference Example
+- The example in "counterfactual_inference_example_huggingface.ipynb" shows how one may use counterfactual inference to debias an existing NLI model.
+- In order to get coutnerfactual inference results as seen on paper "notebooks/Counterfactual_Inference_Debias_Results_Correction_Anon.ipynb" shows how one can apply counterfactual inference and collect results.
+- To train bias models and main models from scratch, one may consult the rest of this readme file:
+
+
 
 ## Installation
 
@@ -39,13 +45,6 @@ allennlp evaluate_mult ${MNLI_PARAMS[@]}
 
 
 ## In Details
-
-### Counterfactual Inference Example
-- The example in "counterfactual_inference_example_huggingface.ipynb" shows how one may use counterfactual inference to debias an existing NLI model.
-- In order to get coutnerfactual inference results as seen on paper "notebooks/Counterfactual_Inference_Debias_Results_Correction_Anon.ipynb" shows how one can apply counterfactual inference and collect results.
-- To train bias models and main models from scratch, one may consult the rest of this readme file:
-
-
 
 
 ### Training and load a bias model
