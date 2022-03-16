@@ -49,20 +49,20 @@ allennlp evaluate_mult ${MNLI_PARAMS[@]}
 #### How to load model from a huggingface  [Korn]
         
 ### Getting predictions:<br/>
-    a. Get predictions from bias models [Jab,Korn] + jsonl files<br/>
-        i. Jsonl train*<br/>
-        ii. Jsonl dev<br/>
-        iii. Jsonl test<br/>
-        iv. Jsonl challenge set<br/>
-    b. Get prediction from main models [Can, Jab] + jsonl files<br/>
-        i. Slurm files for getting raw pred<br/>
-        ii. Raw val set<br/>
-        iii. Raw test set<br/>
-        iv. Raw challenge set<br/>
+### Get predictions from bias models [Jab,Korn] + jsonl files
+#### Jsonl train*
+#### Jsonl dev
+#### Jsonl test
+#### Jsonl challenge set
+### Get prediction from main models [Can, Jab] + jsonl files
+#### Slurm files for getting raw pred
+#### Raw val set
+#### Raw test set
+#### Raw challenge set
 ### Apply CMA [Can]
-    a. Sharpness control (need predictions on valset for both models) [Can]<br/>
-    b. TIE_A [Can]<br/>
-    c. TE_model [Can]<br/>
+#### Sharpness control (need predictions on valset for both models) [Can]
+#### TIE_A [Can]
+#### TE_model [Can]
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
