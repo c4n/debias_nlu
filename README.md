@@ -110,7 +110,7 @@ Getting raw prediction from trained model on FEVER is quite trivial when using t
 bash slurm_jobs/fact_verification/job_get_raw.sub results/outputs_fever_bert_base_1
 ```
 
-- for raw prediction data and the dataset: you can download using the following links
+- for raw prediction data: you can download using the following link: [https://anonymshare.com/2QL1/pred-data.zip](https://anonymshare.com/2QL1/pred-data.zip)
 
 
 ## License
