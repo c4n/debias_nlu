@@ -6,7 +6,7 @@ This GitHub repo contains codes and scripts for the paper xxxx.
 
 - [allennlp 2.5.0](https://github.com/allenai/allennlp/tree/v2.5.0)
 
-to do...
+
 
 ```shell
 pip install allennlp==2.5.0 allennlp-models==2.5.0
@@ -40,8 +40,13 @@ allennlp evaluate_mult ${MNLI_PARAMS[@]}
 
 ## In Details
 
-### Steps for running CMA [Can]
-### How to get the files ready?
+### Counterfactual Inference Example
+- The example in "counterfactual_inference_example_huggingface.ipynb" shows how one may use counterfactual inference to debias an existing NLI model.
+- In order to get coutnerfactual inference results as seen on paper "notebooks/Counterfactual_Inference_Debias_Results_Correction_Anon.ipynb" shows how one can apply counterfactual inference and collect results.
+- To train bias models and main models from scratch, one may consult the rest of this readme file:
+
+
+
 
 ### Training and load a bias model
 
