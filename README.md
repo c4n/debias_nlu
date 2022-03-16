@@ -48,17 +48,17 @@ allennlp evaluate_mult ${MNLI_PARAMS[@]}
 #### How to load a trained main model [Can, Jab]
 #### How to load model from a huggingface  [Korn]
         
-### Getting predictions:<br/>
-### Get predictions from bias models [Jab,Korn] + jsonl files
-#### Jsonl train*
-#### Jsonl dev
-#### Jsonl test
-#### Jsonl challenge set
-### Get prediction from main models [Can, Jab] + jsonl files
-#### Slurm files for getting raw pred
-#### Raw val set
-#### Raw test set
-#### Raw challenge set
+### Getting predictions:
+#### Get predictions from bias models [Jab,Korn] + jsonl files
+##### Jsonl train*
+##### Jsonl dev
+##### Jsonl test
+##### Jsonl challenge set
+#### Get prediction from main models [Can, Jab] + jsonl files
+##### Slurm files for getting raw pred
+##### Raw val set
+##### Raw test set
+##### Raw challenge set
 ### Apply CMA [Can]
 #### Sharpness control (need predictions on valset for both models) [Can]
 #### TIE_A [Can]
