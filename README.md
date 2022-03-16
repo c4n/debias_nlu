@@ -41,8 +41,8 @@ allennlp evaluate_mult ${MNLI_PARAMS[@]}
 ## In Details
 
 ### Steps for running CMA [Can]
-- How to get the files ready?
-- How to train a bias model?  [Jab*, Korn*]  (which file to run, outputfile name)
+### How to get the files ready?
+### How to train a bias model?  [Jab*, Korn*]  (which file to run, outputfile name)
 Firstly, we need to make sure that the dataset is well placed in the relative path "data/fact_verification". For convenient, you can run the "download.sh" and "preprocess.sh" scripts in the path "data/fact_verification" to get a FEVER dataset. In order to train the bias model for FEVER dataset, you can configure the following parameters in "notebooks/Bias_Model_FEVER.ipynb" file. Then we run all the python script in this file for training the bias model and save it into your pointed path.
 
 ```bash
