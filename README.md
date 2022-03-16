@@ -1,4 +1,4 @@
-# Mitigating Spurious Correlation in Natural Language Inference using Causal Inference
+# Mitigating Spurious Correlation in Natural Language Inference with Causal Inference
 
 This GitHub repo contains codes and scripts for the paper xxxx.
 ### Counterfactual Inference Example
