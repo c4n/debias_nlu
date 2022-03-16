@@ -41,12 +41,12 @@ allennlp evaluate_mult ${MNLI_PARAMS[@]}
 ## In Details
 
 ### Steps for running CMA [Can]
-    a. How to get the files ready? <br/>
-    b. How to train a bias model?  [Jab*, Korn*]  (which file to run, outputfile name)<br/>
-    c. How to load a trained bias model (example) [Jab, Korn] <br/>
-    d. How to train a main model  [Can*,Jab*, Korn*]  (which file to run, outputfile name)<br/>
-    e. How to load a trained main model [Can, Jab]<br/>
-    f. How to load model from a huggingface  [Korn] <br/>
+    #### How to get the files ready?
+    #### How to train a bias model?  [Jab*, Korn*]  (which file to run, outputfile name)
+    #### How to load a trained bias model (example) [Jab, Korn]
+    #### How to train a main model  [Can*,Jab*, Korn*]  (which file to run, outputfile name)
+    #### How to load a trained main model [Can, Jab]
+    #### How to load model from a huggingface  [Korn]
         
 ### Getting predictions:<br/>
     a. Get predictions from bias models [Jab,Korn] + jsonl files<br/>
