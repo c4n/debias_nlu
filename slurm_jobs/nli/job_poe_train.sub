@@ -1,0 +1,4 @@
+cd /path-to/debias_nlu
+MODEL_DIR="results/outputs_poe_bert_base_korn_clark_1_seed13370"
+echo $MODEL_DIR
+allennlp train configs/nli/poe/mnli_bert_base_poe_korn_clark_1.jsonnet -s $MODEL_DIR/ --include-package my_package --overrides '{ "random_seed": 13370, "numpy_seed": 1337, "pytorch_seed": 133}'

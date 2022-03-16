@@ -1,0 +1,28 @@
+MODEL_DIR="results/outputs_mnli_bert_base_1"
+# mnli=
+echo $MODEL_DIR
+cd /path-to/debias_nlu
+
+mkdir -p  $MODEL_DIR/normal
+MNLI_PARAMS=($MODEL_DIR/model.tar.gz  
+/path-to/debias_nlu/data/nli/multinli_1.0_dev_mismatched.jsonl
+--output-file=$MODEL_DIR/normal/result.txt
+--cuda-device=0
+--include-package=my_package)
+allennlp evaluate_mult ${MNLI_PARAMS[@]} # standard eval
+echo $MODEL_DIR
+
+
+# Get RAW
+
+allennlp predict  $MODEL_DIR/model.tar.gz  /path-to/debias_nlu/data/nli/multinli_1.0_dev_mismatched.jsonl --output-file $MODEL_DIR/raw_mm.jsonl --batch-size 64 --cuda-device 0 --predictor textual_entailment  --include-package my_package
+echo $MODEL_DIR
+
+allennlp predict  $MODEL_DIR/model.tar.gz  /path-to/debias_nlu/data/nli/multinli_1.0_dev_matched.jsonl --output-file $MODEL_DIR/raw_m.jsonl --batch-size 64 --cuda-device 0 --predictor textual_entailment  --include-package my_package
+
+# # hans
+allennlp predict $MODEL_DIR/model.tar.gz /path-to/debias_nlu/data/nli/heuristics_evaluation_set.jsonl --output-file $MODEL_DIR/hans_result.jsonl --batch-size 16 --cuda-device 0 --predictor textual_entailment --include-package my_package
+
+cd utils/
+python hans_parser.py -i $MODEL_DIR/hans_result.jsonl -o $MODEL_DIR/hans.out
+python evaluate_heur_output.py $MODEL_DIR/hans.out > $MODEL_DIR/hans_results.txt

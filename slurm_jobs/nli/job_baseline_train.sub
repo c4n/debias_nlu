@@ -1,0 +1,3 @@
+
+cd cd /path-to/debias_nlu
+allennlp train /cd /path-to/debias_nlu/debias_nlu/configs/nli/baseline/mnli_bert_base_clark_1.jsonnet -s /raid/can/nli_models/baseline/nli/outputs_bert_base_clark_1_seed43370/ --overrides '{ "random_seed": 43370, "numpy_seed": 4337, "pytorch_seed": 433}'

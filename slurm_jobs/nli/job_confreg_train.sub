@@ -1,0 +1,33 @@
+
+MODEL_DIR="/path-to/debias_nlu/results/outputs_bert_base_clark_1_seed13370"
+weighted_training_set="/path-to/debias_nlu/results/korn_lr_overlap_bias_probs.jsonl" #just to make sure that predictions' indices match with the training data
+
+
+cd /path-to/debias_nlu
+mkdir -p $MODEL_DIR/normal
+# Train Model
+# Predict
+rm $MODEL_DIR/normal/raw_train_result_0.jsonl 
+rm $MODEL_DIR/normal/utama_distill_output_0.jsonl
+rm -r $MODEL_DIR/normal/utama_kornlr_distill_model_* 
+if [ ! -f $MODEL_DIR/normal/raw_train_result_0.jsonl ]
+then
+   echo "File not found!"
+   allennlp predict $MODEL_DIR/model.tar.gz $weighted_training_set --output-file $MODEL_DIR/normal/raw_train_result_0.jsonl --batch-size 64 --cuda-device 0 --predictor textual_entailment --silent
+fi
+
+
+
+echo $MODEL_DIR
+
+max=0
+for i in `seq 0 $max`
+do
+    # Distill
+    ## Generate Training Set with Soft Target
+    python utils/create_distill_train_set.py -t $weighted_training_set -p $MODEL_DIR/normal/raw_train_result_${i}.jsonl -o  $MODEL_DIR/normal/utama_distill_output_${i}.jsonl 
+    ## Train a distilled model
+    allennlp train configs/nli/knowledge_distill/mnli_bert_base_utama_distill_clark_1.jsonnet -s $MODEL_DIR/normal/utama_kornlr_distill_model_${i} --include-package my_package --overrides '{"train_data_path": "'"$MODEL_DIR/normal/utama_distill_output_${i}.jsonl"'",}'
+    ## Predict
+    # next_distill=$((i+1))
+done
