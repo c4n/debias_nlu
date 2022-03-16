@@ -1,14 +1,3 @@
-#!/bin/bash -l
-#SBATCH --job-name=overlap_ps
-#SBATCH --output=overlap_ps
-#SBATCH --partition=scads
-#SBATCH --account=scads
-#SBATCH --gres=gpu:1
-#SBATCH --mem=32gb
-#SBATCH --time=72:00:00
-
-source activate mnli
-
 allennlp train configs/nli/propensity_score/overlapping_ps.jsonnet \
 -s /raid/can/nli_models/korn_overlapping/outputs_bert_base_overlapping_korn_full_ps3class_1/ \
 --include-package my_package \
