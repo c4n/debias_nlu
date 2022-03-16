@@ -40,14 +40,15 @@ allennlp evaluate_mult ${MNLI_PARAMS[@]}
 
 ## In Details
 
-1. Steps for running CMA [Can]<br/>
+### Steps for running CMA [Can]
     a. How to get the files ready? <br/>
     b. How to train a bias model?  [Jab*, Korn*]  (which file to run, outputfile name)<br/>
     c. How to load a trained bias model (example) [Jab, Korn] <br/>
     d. How to train a main model  [Can*,Jab*, Korn*]  (which file to run, outputfile name)<br/>
     e. How to load a trained main model [Can, Jab]<br/>
     f. How to load model from a huggingface  [Korn] <br/>
-2. Getting predictions:<br/>
+        
+### Getting predictions:<br/>
     a. Get predictions from bias models [Jab,Korn] + jsonl files<br/>
         i. Jsonl train*<br/>
         ii. Jsonl dev<br/>
@@ -58,7 +59,7 @@ allennlp evaluate_mult ${MNLI_PARAMS[@]}
         ii. Raw val set<br/>
         iii. Raw test set<br/>
         iv. Raw challenge set<br/>
-4. Apply CMA [Can]<br/>
+### Apply CMA [Can]
     a. Sharpness control (need predictions on valset for both models) [Can]<br/>
     b. TIE_A [Can]<br/>
     c. TE_model [Can]<br/>
