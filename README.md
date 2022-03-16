@@ -80,26 +80,38 @@ In addition, the example process of loading bias model is also contains in "note
 - Training the bias model. The example in "notebooks/qqp_feature_classification_using_MaxEnt.ipynb".
 
 
-#### How to train a main model  [Can*,Jab*, Korn*]  (which file to run, outputfile name)
-#### How to load a trained main model [Can, Jab]
-### How to load model from a huggingface  [Korn]
-For example in "notebooks/huggingface-model-predict-mnli-tutorial.ipynb"
-        
-### Getting predictions:
-#### Get predictions from bias models [Jab,Korn] + jsonl files
-##### Jsonl train*
-##### Jsonl dev
-##### Jsonl test
-##### Jsonl challenge set
-#### Get prediction from main models [Can, Jab] + jsonl files
-##### Slurm files for getting raw pred
-##### Raw val set
-##### Raw test set
-##### Raw challenge set
-### Apply CMA [Can]
-#### Sharpness control (need predictions on valset for both models) [Can]
-#### TIE_A [Can]
-#### TE_model [Can]
+## How to train a main model  [Can*,Jab*, Korn*]  (which file to run, outputfile name)
+
+Once you have the scripts and the dataset available on your local machine, the training process of the main model could be execute via the following running template.
+
+```bash
+bash slurm_jobs/{DATASET}/job_{MODEL_NAME}_train.sub
+```
+
+For example, training the baseline model with FEVER dataset would requires you to execute this command.
+
+```bash
+bash slurm_jobs/fact_verification/job_bert_base_train.sub
+```
+
+
+## How to load a trained main model [Can, Jab]
+
+Simialar to training, to evaluate the trained model on the testset, we could do it by executing the following command.
+
+```bash
+bash slurm_jobs/{DATASET}/job_{MODEL_NAME}_eval.sub
+```
+
+## How to get raw prediction
+
+Getting raw prediction from trained model on FEVER is quite trivial when using the "job_get_raw.sub" and following by your path of the trained model. For instance,
+
+```bash
+bash slurm_jobs/fact_verification/job_get_raw.sub results/outputs_fever_bert_base_1
+```
+
+- for raw prediction data and the dataset: you can download using the following links
 
 
 ## License
