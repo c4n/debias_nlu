@@ -1,6 +1,6 @@
 # Mitigating Spurious Correlation in Natural Language Inference with Causal Inference
 
-This GitHub repo contains codes and scripts for the paper xxxx.
+This GitHub repo contains codes and scripts for the paper "Mitigating Spurious Correlation in Natural Language Inference with Causal Inference" (EMNLP 2022).
 ### Counterfactual Inference Example
 - The example in "counterfactual_inference_example_huggingface.ipynb" shows how one may use counterfactual inference to debias an existing NLI model.
 - In order to get coutnerfactual inference results as seen on paper "notebooks/Counterfactual_Inference_Debias_Results_Correction_Anon.ipynb" shows how one can apply counterfactual inference and collect results.
