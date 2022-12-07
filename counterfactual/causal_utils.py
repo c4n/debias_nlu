@@ -1,5 +1,10 @@
+from tabulate import tabulate
+
 def get_heur(guess_dict):
-    fi = open("/ist/users/canu/debias_nlu/data/nli/heuristics_evaluation_set.txt", "r")
+     
+    # original path : /ist/users/canu/debias_nlu/data/nli/heuristics_evaluation_set
+    
+    fi = open("../data/nli/heuristics_evaluation_set.txt", "r")
 
     correct_dict = {}
     first = True
@@ -7,7 +12,7 @@ def get_heur(guess_dict):
     heuristic_list = []
     subcase_list = []
     template_list = []
-
+     
     for line in fi:
         if first:
             labels = line.strip().split("\t")
@@ -17,11 +22,15 @@ def get_heur(guess_dict):
         else:
             parts = line.strip().split("\t")
             this_line_dict = {}
+            
             for index, label in enumerate(labels):
                 if label == "pairID":
                     continue
                 else:
                     this_line_dict[label] = parts[index]
+            
+            print(f"Get pairID of current line : {parts[idIndex]}")
+            
             correct_dict[parts[idIndex]] = this_line_dict
 
             if this_line_dict["heuristic"] not in heuristic_list:
@@ -63,7 +72,6 @@ def get_heur(guess_dict):
         heur = traits["heuristic"]
         subcase = traits["subcase"]
         template = traits["template"]
-
         guess = guess_dict[key]
         correct = traits["gold_label"]
         labels.append(correct)
@@ -120,3 +128,34 @@ def get_ans(ans):
         return 'entailment'
     else:
         return 'non-entailment'
+
+def print_results(table,methods, method_figs,test_sets, accuracies):
+
+
+    #results = [['Method', 'MNLI-dev-mm','MNLI-HANS','QQP-dev','QQP-PAWS']]
+
+    propose_methods = ['','TIE', 'TE_model']
+
+
+    for method_idx, method in enumerate(methods):
+        for cur_acc in accuracies.keys():
+
+            if cur_acc == "Normal":
+                
+                entry = [method_figs[method_idx], 
+                        round(100 * accuracies[cur_acc][method][test_sets[0]],2), 
+                        round(100 * accuracies[cur_acc][method][test_sets[1]],2)]
+                        # round(100 * accuracies[cur_acc][method][test_sets[2]],2),
+                        # round(100 * accuracies[cur_acc][method][test_sets[3]],2)
+            else:
+
+                entry = [method_figs[method_idx] + f" + {cur_acc}", 
+                        round(100 * accuracies[cur_acc][method][test_sets[0]],2), 
+                        round(100 * accuracies[cur_acc][method][test_sets[1]],2)]
+                        # ,
+                        # round(100 * accuracies[cur_acc][method][test_sets[2]],2),
+                        # round(100 * accuracies[cur_acc][method][test_sets[3]],2)
+                
+            table.append(entry)
+
+    print(tabulate(table[1:], table[0], tablefmt="grid"))
