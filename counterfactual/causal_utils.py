@@ -1,6 +1,6 @@
 from tabulate import tabulate
 
-def get_heur(guess_dict):
+def get_heur(guess_dict,DEBUG = False):
      
     # original path : /ist/users/canu/debias_nlu/data/nli/heuristics_evaluation_set
     
@@ -29,7 +29,8 @@ def get_heur(guess_dict):
                 else:
                     this_line_dict[label] = parts[index]
             
-            print(f"Get pairID of current line : {parts[idIndex]}")
+            if DEBUG:
+                print(f"Get pairID of current line : {parts[idIndex]}")
             
             correct_dict[parts[idIndex]] = this_line_dict
 
