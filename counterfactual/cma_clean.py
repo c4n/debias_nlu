@@ -19,31 +19,41 @@ BIAS_MODEL_DICT = {
     "mnli_train": "train_prob_korn_lr_overlapping_sample_weight_3class.jsonl",
     "mnli_dev_mm": "test_prob_korn_lr_overlapping_sample_weight_3class.jsonl",
     "mnli_hans": "hans_prob_korn_lr_overlapping_sample_weight_3class.jsonl",
+
     "fever_train": "weighted_fever.train.jsonl",
+
     "fever_dev": "weighted_fever.dev.jsonl",
     "fever_sym1": "weighted_fever_symmetric_v0.1.test.jsonl",
     "fever_sym2": "weighted_fever_symmetric_v0.2.test.jsonl",
     "qqp_train": "qqp_train_overlap_only_bias_weighted.jsonl",
-    "qqp_dev": "qqp_dev_overlap_only_bias_weighted.jsonl",
-    "qqp_paws": "paws_dev_and_test_overlap_only_bias_weighted.jsonl",
+
+    "qqp_dev": "qqp_dev_overlap_only_bias_weighted.jsonl", 
+    "qqp_paws": "paws_dev_and_test_overlap_only_bias_weighted.jsonl", 
 }
+
 
 TASK2TRAIN_DICT = {"nli": "mnli_val", "fever": "fever_val", "qqp": "qqp_val"}
 
 BERT_MODEL_RESULT_DICT = {
+
     "mnli_train": "raw_train.jsonl",
     "mnli_val": "raw_m.jsonl",
+
     "mnli_dev_mm": "raw_mm.jsonl",
     "mnli_hans": "normal/hans_result.jsonl",
+    
     "fever_train": "raw_fever.train.jsonl",
     "fever_val": "raw_fever.val.jsonl",
+
     "fever_dev": "raw_fever.dev.jsonl",
     "fever_sym1": "raw_fever_symmetric_v0.1.test.jsonl",
     "fever_sym2": "raw_fever_symmetric_v0.2.test.jsonl",
+
     "qqp_train": "raw_qqp.train.jsonl",
     "qqp_val": "raw_qqp.val.jsonl",
-    "qqp_dev": "raw_qqp.dev.jsonl",
-    "qqp_paws": "raw_paws.dev_and_test.jsonl",
+
+    "qqp_dev": "raw_qqp.dev.jsonl",  
+    "qqp_paws": "raw_paws.dev_and_test.jsonl", 
 }
 
 class Inference:
@@ -54,7 +64,10 @@ class Inference:
     test_set: str = None,
     MODE_PATH_CONFIG: dict = None,
     TE_CONFIG: dict = None,
+    DEFAULT_CONFIG: dict = None,
     label_maps: dict = None,
+    DEBUG: bool = False,
+    ground_truth_key: str = "gold_label",
     fusion: Callable[[PROB_T], PROB_T] = None,
     bias_val_pred_file: str = "dev_prob_korn_lr_overlapping_sample_weight_3class.jsonl",
     model_val_pred_file: str = "raw_m.jsonl")-> None:
@@ -65,43 +78,31 @@ class Inference:
         self.task = task
         self.mode_path_config = MODE_PATH_CONFIG
         self.te_config = TE_CONFIG
+        self.default_config = DEFAULT_CONFIG
         self.fusion = fusion
         self.label_maps = label_maps
-        
+        self.ground_truth_key = ground_truth_key
+        self.DEBUG = DEBUG
+
         self.bias_val_pred_file = bias_val_pred_file
+
+        if DEBUG:
+            print(f"self.bias_val_pred_file : {self.bias_val_pred_file}")
+        
+        
         self.model_val_pred_file = model_val_pred_file
 
         self.df_bert = {}
         self.df_bias = {} 
 
-        self.y_a_x = {"no-treatment": None, "treatment": None}
+        self.y_prob = { 'a' : {'x' :  None, 'x*':  None}}
+
         self.label_modes = {"normal": None, "TIE_debias": None,"TE_debias": None}
 
         self.modes = list(self.mode_path_config.keys())
         
         for mode in self.modes:
-            # Todo: making more general eg. we can put any model on eval mode even
-            # in training mode without the need of json files
 
-            """
-            print(f"mode : {mode}") 
-            print(f"data path : {self.data_path}")
-            print(f"model path : {self.model_path}")
-            print(f"config mode path : {self.mode_path_config[mode][1]}")
-
-            if self.data_path in model_path and self.task in self.mode_path_config[mode][1]:  
-
-                print(f"change stage")
-                self.bert_path = os.path.join(
-                                self.model_path,
-                                self.mode_path_config[mode][0])
-                self.bias_path = os.path.join(
-                            self.data_path, 
-                            self.mode_path_config[mode][1]) 
-            else:
-                print(f"doesnt change stage")
-
-            """
             self.bert_path = os.path.join(
                         self.data_path, 
                         self.task, 
@@ -113,8 +114,9 @@ class Inference:
                         self.task,
                         self.mode_path_config[mode][1]) 
     
-            print(f"bert path : {self.bert_path}")
-            print(f"bias path : {self.bias_path}")
+            if DEBUG:
+                print(f"bert path : {self.bert_path}")
+                print(f"bias path : {self.bias_path}")
 
             self.df_bert[mode] = pd.read_json(self.bert_path ,lines=True)
             
@@ -125,22 +127,28 @@ class Inference:
                 self.bias_val_pred_file  = self.mode_path_config["train"][1] 
                 self.model_val_pred_file = self.mode_path_config["train"][0] 
             
-            if mode == "eval": 
+            elif mode == "eval": 
 
                 self.bert_probs = self.df_bert[mode]['probs']                         
                 self.bias_probs = np.array([b for b in self.df_bias[mode]['bias_probs']])
+    
+    def get_probs(self)-> Tuple:
 
+        return self.bert_probs, self.bias_probs
              
     def get_tie_scores(self)-> List:
-        
-        """
-        TIE : p <- y1m1prob,  fuse of bert_probs , bias_probs ; Ya,x
-              b <- y1m0prob = fusion(c,hans_score) ; Ya,x*
-            : (p-b) # TIE 
-        """          
                                 
-        # compute y1m1prob
-        self.y_a_x["treatment"]  = []
+        
+        self.y_prob['a']['x']  = []
+
+
+        self.default_config["N_LABELS"] = self.bias_probs.shape[-1]
+
+        if self.DEBUG:
+            print(f"in get tie_scores")
+            print(f"self.bias_val_pred_file : {self.bias_val_pred_file}")
+            print(f"self.model_val_pred_file: {self.model_val_pred_file}")
+
 
         TIE_A = []
         
@@ -148,24 +156,24 @@ class Inference:
                 data_path  = os.path.join(self.data_path, self.task),
                 model_path = os.path.join(self.data_path, self.task, self.model_path), 
                 fusion = self.fusion,
+                DEBUG = self.DEBUG,
                 bias_val_pred_file  = self.bias_val_pred_file,
-                model_val_pred_file = self.model_val_pred_file)
+                model_val_pred_file = self.model_val_pred_file,
+                config = self.default_config)
                                             
         for p, h in zip(self.bert_probs, self.bias_probs):
             
-            # new_y1m1 = fusion(np.array(p), h)
             new_y1m1 = self.fusion(np.array(p), h)
 
-            self.y_a_x["treatment"].append(new_y1m1)
+            self.y_prob['a']['x'].append(new_y1m1)
 
-        # correct y1m0prob using score
-        self.y_a_x["no-treatment"] = self.fusion(c, self.bias_probs)
-        
-        for p, b in zip(self.y_a_x["treatment"], self.y_a_x["no-treatment"]):
+        self.y_prob['a']['x*'] = self.fusion(c, self.bias_probs)
+
+        for p, b in zip(self. y_prob['a']['x'], self. y_prob['a']['x*']):
 
             TIE_A.append(p - b)
             
-        return TIE_A
+        return TIE_A, c
 
     def get_te_model(self)-> List:
         
@@ -176,25 +184,31 @@ class Inference:
         """     
         
         TE_model = []
+
+
+        
+        self.te_config["N_LABELS"] = self.bias_probs.shape[-1]
         
         # this c is no fusion
         c = get_c(os.path.join(self.data_path, self.task), 
                   os.path.join(self.data_path, self.task, self.model_path), 
+                  DEBUG = self.DEBUG,
                   bias_val_pred_file  = self.bias_val_pred_file,
                   model_val_pred_file = self.model_val_pred_file,
                   config = self.te_config)  
         
         for p, b in zip(self.bert_probs, self.bias_probs):    
          
+            # TE_model.append(p - b)
             TE_model.append(p - c * b)
         
-        return TE_model
+        return TE_model, c
                     
     def get_text_answers(self)-> Dict:
         
         self.label_modes['normal'] = self.bert_probs
-        self.label_modes['TIE_debias'] = self.get_tie_scores()
-        self.label_modes['TE_debias']  = self.get_te_model()
+        self.label_modes['TIE_debias'], tie_c = self.get_tie_scores()
+        self.label_modes['TE_debias'], te_c  = self.get_te_model()
         
         text_answers = {}
         
@@ -215,10 +229,27 @@ class Inference:
             
         return text_answers   
 
-    def get_unique_label(self) -> str:
+    def get_unique_label(self) -> Tuple:
 
-        pass
+        if self.DEBUG:
+            print(f"df_bias keys : {self.df_bias.keys()}")
+            print(f"df_bias keys : {self.df_bias['eval'].keys()}")
+            print(f"unique labels : {self.df_bias['eval']['gold_label'].unique()}")
 
+        labels = self.df_bias['eval'][self.ground_truth_key]
+        unique_labels = labels.unique().tolist()
+
+        offset = 0
+        
+        
+        if "-" in self.df_bias['eval'][self.ground_truth_key].value_counts():
+            # no ground truth
+            offset = self.df_bias['eval'][self.ground_truth_key].value_counts()["-"]
+        
+        if self.DEBUG:
+            print("unique_labels: ", unique_labels)
+
+        return unique_labels, labels, offset
                                  
     def format_label(self, label)-> str:
         
@@ -279,22 +310,28 @@ def get_bias_effect(
         return (nde[1], nie[1], tie[1], te[1])
     raise NotImplementedError("Does not support test_set: %s" % test_set)
 
-
 def get_c(
     data_path: str,
     model_path: str,
     x0: PROB_T = None,
     fusion: Callable[[PROB_T], PROB_T] = None,
+    DEBUG: bool = False,
     bias_val_pred_file: str = "dev_prob_korn_lr_overlapping_sample_weight_3class.jsonl",
     model_val_pred_file: str = "raw_m.jsonl",
     bias_probs_key: str = "bias_probs",
     model_probs_key: str = "probs",
     config: dict = ESTIMATE_C_DEFAULT_CONFIG,
 ) -> List[float]:
-    print(os.path.join(
-        data_path, bias_val_pred_file))
-    df_bias_dev = pd.read_json(os.path.join(
-        data_path, bias_val_pred_file), lines=True)
+
+    if DEBUG:
+        print(f"In get_c function:")
+        print(f"bias_val_pred_file:")
+        print(os.path.join(data_path, bias_val_pred_file))
+        print(f"model_val_pred_file")
+        print(os.path.join(model_path, model_val_pred_file))
+        print(f"current config : {config}")
+
+    df_bias_dev = pd.read_json(os.path.join(data_path, bias_val_pred_file), lines=True)
     bias_dev_score = [b for b in df_bias_dev[bias_probs_key]]
     bias_dev_score = np.array(bias_dev_score)
     # ya1x0_dev = fusion(bias_dev_score, x0)
@@ -309,12 +346,20 @@ def get_c(
             new_ya1x1 = fusion(np.array(p), h)
             ya1x1prob_dev.append(new_ya1x1)
     
-    c = sharpness_correction(bias_dev_score, df_bert_dev['probs'] if fusion is None else ya1x1prob_dev, config=config)
-    n_labels = bias_dev_score[0].shape[0]
-    c = c*np.ones(n_labels)
 
-    print("c: ", c)
-    print("softmax(c): ", softmax(c))
+    if DEBUG:
+        print(f"bias_dev_score : {bias_dev_score.shape}")
+        print(f"bert_dev_score  : {df_bert_dev['probs'].shape}")
+        # print(f"bias_dev_score val : {bias_dev_score[:3,:]}")
+
+    c = sharpness_correction(bias_dev_score, df_bert_dev['probs'] if fusion is None else ya1x1prob_dev, config=config)
+    
+    n_labels = bias_dev_score[0].shape[0]
+    c = c * np.ones(n_labels)
+
+    if DEBUG:
+        print("c: ", c)
+        print("softmax(c): ", softmax(c))
 
     return c
 
@@ -364,6 +409,7 @@ def report_CMA(
     estimate_c_config: dict = ESTIMATE_C_DEFAULT_CONFIG,
     estimate_c_te_config: dict = ESTIMATE_C_TE_CONFIG,
     correction: bool = False,
+    DEBUG: bool = False,
     bias_probs_key: str = "bias_probs",
     ground_truth_key: str = "gold_label",
     model_pred_method: Callable[[List[float]], List[float]] = _default_model_pred,
@@ -381,18 +427,14 @@ def report_CMA(
     # load predictions from bias model (e.g., logistic regression)
     assert test_set in BIAS_MODEL_DICT.keys()
 
-    print(os.path.join(data_path, task, BIAS_MODEL_DICT[test_set]))
-    df_bias_model = pd.read_json(
-        os.path.join(data_path, task, BIAS_MODEL_DICT[test_set]), lines=True
-    )
-    a1 = [b for b in df_bias_model[bias_probs_key]]  # prob for all classes
-    a1 = np.array(a1)  # [N_batch, n_class]
-    n_labels = a1.shape[1]
+
 
     # get a list of all seed dir
     if not seed_path:
 
-        to_glob = data_path + f'{task}/' + model_path + task + "/*/"
+        path_w_o_task = task if task == 'nli' else ""
+        to_glob = data_path + f'{task}/' + model_path + path_w_o_task + "/*/"
+        #data_path + f'{task}/' + model_path + task + "/*/"
         seed_path = glob.glob(to_glob)  # list of model dir for all seeds
 
     # init list to store results
@@ -417,48 +459,21 @@ def report_CMA(
 
     # get avg score
     for seed_idx in range(len(seed_path)):
-        print(
-            os.path.join(
-                seed_path[seed_idx], BERT_MODEL_RESULT_DICT[TASK2TRAIN_DICT[task]]
-            )
-        )
 
-        """
-        # x0 is no treatment ; uniform distribution
-        x0 = (1/n_labels) * np.ones(n_labels)
-        te_correction =  np.ones(n_labels)
+        if DEBUG:
+            print(
+                os.path.join(
+                    seed_path[seed_idx], BERT_MODEL_RESULT_DICT[TASK2TRAIN_DICT[task]]
+                )
+            )
 
-        if correction:
-            x0 = get_c(
-                data_path=os.path.join(data_path, task),
-                model_path=seed_path[seed_idx],
-                fusion=fusion,
-                x0=x0,
-                bias_val_pred_file=bias_val_pred_file,
-                model_val_pred_file=model_val_pred_file,
-                bias_probs_key=bias_probs_key,
-                model_probs_key="probs",
-                config=estimate_c_config,
-            )
-            # for what ?
-            te_correction = (1/n_labels) * np.ones(n_labels)
-            te_correction = get_c_te(
-                data_path=os.path.join(data_path, task),
-                model_path=seed_path[seed_idx],
-                fusion=fusion,
-                x0=te_correction,
-                bias_val_pred_file=bias_val_pred_file,
-                model_val_pred_file=model_val_pred_file,
-                bias_probs_key=bias_probs_key,
-                model_probs_key="probs",
-                config=estimate_c_te_config,
-            )
-        """
-        
+
+        # MODE_PATH_CONFIG = {"eval": [ BERT_MODEL_RESULT_DICT["mnli_dev_mm"], BIAS_MODEL_DICT[test_set] ]}
         MODE_PATH_CONFIG = {"eval": [ BERT_MODEL_RESULT_DICT[test_set], BIAS_MODEL_DICT[test_set] ]}
 
-
         cur_seed_model_path =  seed_path[seed_idx].replace(data_path + f'{task}/',"")
+
+        correction = True
 
         counterfactual = Inference( 
                             data_path,
@@ -467,63 +482,70 @@ def report_CMA(
                             test_set = test_set,
                             MODE_PATH_CONFIG = MODE_PATH_CONFIG,
                             TE_CONFIG = estimate_c_te_config, 
-                            fusion = fusion)
+                            DEFAULT_CONFIG = estimate_c_config,
+                            fusion = fusion,
+                            bias_val_pred_file = bias_val_pred_file,
+                            model_val_pred_file = model_val_pred_file,
+                            DEBUG = DEBUG)
         
-        print(f"current seed idx : {seed_idx}")
-        print(f"==== compute TIE ====")
-        debias_scores = counterfactual.get_tie_scores()
+        if DEBUG:
+            print(f"current seed idx : {seed_idx}")
 
-        print(f"==== compute TE ====")
-        te_scores = counterfactual.get_te_model()
+
+        debias_scores, tie_c = counterfactual.get_tie_scores()
+        te_scores, te_c = counterfactual.get_te_model()
+
+        if DEBUG:
+            print(f"compute TIE : {np.array(debias_scores).shape} ")
+            print(f"compute TE : {np.array(te_scores).shape}")
           
-        """
+        unique_labels, labels, offset = counterfactual.get_unique_label()
+        bert_probs, bias_probs = counterfactual.get_probs()
+
+
+        a = {"treatment": None,"no-treatment": None}
+        x = {"treatment": None,"no-treatment": None}
+        
+        y_prob = { 'a' : {'x' :  None, 'x*':  None},
+                   'a*': {'x':   None, 'x*':  None}}
+
+        n_labels = bias_probs.shape[1]
+
+        # Todo: change accodingly if correction x0 <- get_c  
+        x['no-treatment'] = (1/n_labels) * np.ones(n_labels)
+        a['no-treatment'] = (1/n_labels) * np.ones(n_labels)
+
+        te_correction = (1/n_labels) * np.ones(n_labels)
+
+        if correction:
+            x['no-treatment'] = tie_c #np.array([0.10714141, 0.10714141, 0.10714141])
+            te_correction = te_c
+        
+        a['treatment'] = bias_probs
+        x['treatment'] = bert_probs
+
         # fusion to create ya1x0
-        ya1x0prob = fusion(a1, x0)
+        # ya1x0prob = fusion(a1, x0)
+        y_prob['a']['x*'] = fusion(a['treatment'], x['no-treatment'])
+        y_prob['a*']['x*'] =  fusion(a['no-treatment'],x['no-treatment'])
 
-        # get score of the model on a challenge set
-        df_bert = pd.read_json(
-            os.path.join(seed_path[seed_idx],
-                         BERT_MODEL_RESULT_DICT[test_set]),
-            lines=True,
-        )
+        #ya0x0 = fusion(a0, x0)
+        y_prob['a*']['x*'] = fusion(a['no-treatment'], x['no-treatment'])
+        
+        #ya1x1prob
+        y_prob['a']['x'] = []
 
-        # ya1x1
-        # Todo: This is TIE score
-        ya1x1prob = []
-        x1 = df_bert["probs"]
-        for b, p in zip(a1, x1):
-            new_ya1x1 = fusion(np.array(b), p)
-            ya1x1prob.append(new_ya1x1)
+        for b, p in zip(a['treatment'], x['treatment']):
+            cur_y_prob = fusion(np.array(b), p)
+            y_prob['a']['x'].append(cur_y_prob)
 
-        debias_scores = []
-        for factual, counterfactual in zip(ya1x1prob, ya1x0prob):
-            debias_scores.append(factual - counterfactual) 
-            
-        # ==============  END of TIE score =====================
-
-        # {0:"entailment",1:"contradiction",2:"neutral"}
-        labels = df_bias_model[ground_truth_key]
-        unique_labels = labels.unique().tolist()
-        print("unique_labels: ", unique_labels)
-
-        break
-
-        # to offset samples with no ground truth from accuracy calculation
-        offset = 0
-        if "-" in df_bias_model[ground_truth_key].value_counts():
-            # no ground truth
-            offset = df_bias_model[ground_truth_key].value_counts()["-"]
-
-        # CMA
-        a0 = (1/n_labels) * np.ones(n_labels)
-        # fuse no treament of main model and bias model
-        ya0x0 = fusion(a0, x0)
         # to measure accuracy
         factual_pred_correct = []
         TIE_pred_correct = []
         NIE_pred_correct = []
         INTmed_pred_correct = []
         pred_correct = []
+
         # for mediation analysis
         all_TE = []
         all_TIE = []
@@ -536,50 +558,68 @@ def report_CMA(
         intmed_y_preds = []
         my_causal_y_preds = []
 
-        for i in range(len(labels)):
-            ya1x1 = ya1x1prob[i]
-            ya1x0 = ya1x0prob[i]
+        # Todo: vectorize
+        for idx in range(len(labels)):
 
-            TE = ya1x1 - ya0x0
-            NDE = ya1x0 - ya0x0
-            ya0x1 = fusion(a0, np.array(x1[i]))
-            TIE = ya1x1 - ya1x0
-            NIE = ya0x1 - ya0x0
+            # ya0x1 
+            y_prob['a*']['x'] = fusion(a['no-treatment'], np.array(x['treatment'][idx]))
+
+            # ya1x1 - ya0x0  
+            TE  = y_prob['a']['x'][idx] - y_prob['a*']['x*']
+
+            # ya1x1 - ya1x0 
+            TIE = debias_scores[idx] 
+            
+            #ya1x0 - ya0x0
+            NDE = y_prob['a']['x*'][idx] - y_prob['a*']['x*'] 
+            
+            #ya0x1 - ya0x0
+            NIE = y_prob['a*']['x'] - y_prob['a*']['x*'] 
+            
             INTmed = TIE - NIE
+                
             # factual ## Todo: wrong index for FEVER
-            factual_ans = np.argmax(x1[i])
+            factual_ans = np.argmax(x['treatment'][idx])
+
+            
+
             factual_ans = get_ans(factual_ans, test_set)
-            assert type(factual_ans) == type(labels[i])
+            assert type(factual_ans) == type(labels[idx])
 
             factual_y_preds.append(factual_ans)
-            factual_correct = factual_ans == labels[i]
+            factual_correct = factual_ans == labels[idx]
+            # collect factual answer
             factual_pred_correct.append(factual_correct)
+
             # TIE
-            TIE_ans = np.argmax(TIE)
+            TIE_ans = np.argmax(TIE) 
             TIE_ans = get_ans(TIE_ans, test_set)
-            assert type(TIE_ans) == type(labels[i])
+            assert type(TIE_ans) == type(labels[idx])
             tie_y_preds.append(TIE_ans)
-            TIE_correct = TIE_ans == labels[i]
+            TIE_correct = TIE_ans == labels[idx]
             TIE_pred_correct.append(TIE_correct)
+
             # INTmed
             INTmed_ans = np.argmax(INTmed)
             INTmed_ans = get_ans(INTmed_ans, test_set)
-            assert type(INTmed_ans) == type(labels[i])
+            assert type(INTmed_ans) == type(labels[idx])
             intmed_y_preds.append(INTmed_ans)
-            INTmed_correct = INTmed_ans == labels[i]
+            INTmed_correct = INTmed_ans == labels[idx]
             INTmed_pred_correct.append(INTmed_correct)
+
             # NIE
             NIE_ans = np.argmax(NIE)
             NIE_ans = get_ans(NIE_ans, test_set)
-            assert type(NIE_ans) == type(labels[i])
+            assert type(NIE_ans) == type(labels[idx])
             nie_y_preds.append(NIE_ans)
-            NIE_correct = NIE_ans == labels[i]
+            NIE_correct = NIE_ans == labels[idx]
             NIE_pred_correct.append(NIE_correct)
 
             # save ## Todo: map bias class to correct index for each dataset
             bias_nde, bias_nie, bias_tie, bias_te = get_bias_effect(
                 nde=NDE, nie=NIE, tie=TIE, te=TE, test_set=test_set
             )
+
             all_NDE.append(bias_nde)
             all_NIE.append(bias_nie)
             all_TIE.append(bias_tie)
@@ -587,35 +627,45 @@ def report_CMA(
             all_INTmed.append((INTmed[0]))
 
             entropy = -sum(
-                df_bert["probs"][i] *
-                np.log(df_bert["probs"][i]) / np.log(n_labels)
+                bert_probs[idx] *
+                np.log(bert_probs[idx]) / np.log(n_labels)
             )
-    
+
             # TE_model
-            cf_ans = np.argmax(np.array(x1[i] - te_correction*a1[i]))
+            cf_ans = np.argmax(np.array(te_scores[idx]))
             cf_ans = get_ans(cf_ans, test_set)
-            assert type(cf_ans) == type(labels[i])
-            cf_correct = cf_ans == labels[i]
+            assert type(cf_ans) == type(labels[idx])
+            cf_correct = cf_ans == labels[idx]
 
             my_causal_y_preds.append(cf_ans)
             pred_correct.append(cf_correct)
 
+        # for each seed
+        # minus offset ?
         total_sample = len(labels) - offset
+
+        # compute score for whole samples
         factual_scores.append(sum(factual_pred_correct) / total_sample)
+
         TE_explain.append(np.array(all_TE).mean())
+
         TIE_explain.append(np.array(all_TIE).mean())
+        
         TIE_scores.append(sum(TIE_pred_correct) / total_sample)
+
         NIE_explain.append(np.array(all_NIE).mean())
+
         NIE_scores.append(sum(NIE_pred_correct) / total_sample)
+
         INTmed_explain.append(np.array(all_INTmed).mean())
+
         INTmed_scores.append(sum(INTmed_pred_correct) / total_sample)
         my_causal_query.append(sum(pred_correct) / total_sample)
 
         # save data for analysis
         raw_factual_correct.append(factual_pred_correct)
         raw_TIE.append(all_TIE)          
-
-
+        
         # F1 score
         for x_f1, x_y_preds in zip(
             [factual_f1,TIE_f1, NIE_f1, INTmed_f1, my_causal_f1],
@@ -632,43 +682,40 @@ def report_CMA(
                         f1,
                     ]
     # MACRO F1
-    factual_f1['MAF1']=np.array(list(factual_f1.values())).mean(axis=0)
-    TIE_f1['MAF1']=np.array(list(TIE_f1.values())).mean(axis=0)
-    my_causal_f1['MAF1']=np.array(list(my_causal_f1.values())).mean(axis=0)
+    factual_f1['MAF1'] = np.array(list(factual_f1.values())).mean(axis=0)
+    TIE_f1['MAF1'] = np.array(list(TIE_f1.values())).mean(axis=0)
+    my_causal_f1['MAF1'] = np.array(list(my_causal_f1.values())).mean(axis=0)
 
-    print("factual score:")
-    print(factual_scores)
-    print(np.array(factual_scores).mean(), np.array(factual_scores).std())
+    factual_avg_acc =  np.array(factual_scores).mean()
+    tie_avg_acc  = np.array(TIE_scores).mean()
+    te_model_avg_acc = np.array(my_causal_query).mean()
 
-    print("TE:")
-    print(np.array(TE_explain).mean(), np.array(TE_explain).std())
+    print(f"factual  score avg : {factual_avg_acc} , std : {np.array(factual_scores).std()}")
+    print(f"TIE acc  avg : {tie_avg_acc} std : {np.array(TIE_scores).std()}")
+    print(f"TE_model avg :  {te_model_avg_acc} , std : {np.array(my_causal_query).std()}")
+    
+    if DEBUG:
+        print(f"TE  avg : {np.array(TE_explain).mean()} , std : {np.array(TE_explain).std()}")
+        print(f"TIE avg : {np.array(TIE_explain).mean()} std : {np.array(TIE_explain).std()}")
 
-    print("TIE:")
-    print(np.array(TIE_explain).mean(), np.array(TIE_explain).std())
-    print("TIE acc:")
-    print(TIE_scores)
-    print(np.array(TIE_scores).mean(), np.array(TIE_scores).std())
+    # return
     print(ASD(TIE_scores, factual_scores))
 
     print(
         "TIE F1:",
-        TIE_f1,
+         TIE_f1,
         {"%s_mean_sd" % k: [np.mean(v), np.std(v)] for k, v in TIE_f1.items()},
     )
+    
     print('checking ASD.......')
     print('TIE_MAF1:')
     print(TIE_f1['MAF1'])
     print('factual_MAF1:')
     print(factual_f1['MAF1'])
     print(ASD(TIE_f1['MAF1'], factual_f1['MAF1']))
-    
 
-    print("TE_model:")
-    print(my_causal_query)
-    print(
-        np.array(my_causal_query).mean(),
-        np.array(my_causal_query).std(),
-    )
+    
+    # print(my_causal_query)
     print(ASD(my_causal_query, factual_scores))
     print(
         "TE_model F1:",
@@ -682,9 +729,6 @@ def report_CMA(
     print('factual_MAF1:')
     print(factual_f1['MAF1'])
     print(ASD(my_causal_f1['MAF1'], factual_f1['MAF1']))
-    
-    if return_raw:
-        # Return raw values
-        return raw_factual_correct, raw_TIE
 
-    """
+    return factual_avg_acc, tie_avg_acc, te_model_avg_acc
+    
