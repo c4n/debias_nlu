@@ -51,7 +51,7 @@ allennlp evaluate_mult ${MNLI_PARAMS[@]}
 
 #### MNLI
 - Create customized features for training the bias model. The example in "notebooks/Build_features_extraction.ipynb".
--  For the bias model used in the paper, see "notebooks/Bias_Model_use_our_features.ipynb".
+-  For the bias model used in the paper, see  "notebooks/Bias_Model_3_classes.ipynb" or "notebooks/Bias_Model_use_our_features.ipynb".
 
 #### FEVER
 Firstly, we need to make sure that the dataset is well placed in the relative path "data/fact_verification". For convenient, you can run the "download.sh" and "preprocess.sh" scripts in the path "data/fact_verification" to get a FEVER dataset. In order to train the bias model for FEVER dataset, you can configure the following parameters in "notebooks/Bias_Model_FEVER.ipynb" file. Then we run all the python script in this file for training the bias model and save it into your pointed path.
