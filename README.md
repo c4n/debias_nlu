@@ -116,3 +116,5 @@ bash slurm_jobs/fact_verification/job_get_raw.sub results/outputs_fever_bert_bas
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
 
+## Acknowledgement
+We thank [Sitiporn Sae-Lim](https://github.com/sitiporn) for refactoring our code. 
